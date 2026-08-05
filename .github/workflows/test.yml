@@ -33,3 +33,14 @@ jobs:
 
       - name: Run Forge tests
         run: forge test -vvv
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.2
+        with:
+          fail-on: medium
+
+      - name: Run Aderyn
+        uses: Cyfrin/aderyn-ci@v0
+        with:
+          fail-on: high
+          warn-on: low

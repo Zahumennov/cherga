@@ -9,6 +9,9 @@
 /cache/
 /out/
 
+# Static analysis reports
+/report.md
+
 # Secrets
 .env
 
