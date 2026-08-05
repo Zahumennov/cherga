@@ -1,0 +1,160 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+/// @title Circle
+/// @notice A single rotating savings circle (ROSCA). One contract per circle.
+contract Circle {
+    enum State {
+        Forming,
+        Active,
+        Cancelled,
+        Completed
+    }
+
+    struct Round {
+        uint256 collected;
+        bool closed;
+    }
+
+    // --- errors ---
+
+    error NotImplemented();
+    error ZeroAddress();
+    error ZeroContribution();
+    error InvalidMemberCount();
+    error InvalidRoundDuration();
+    error FillDeadlineInPast();
+    error WrongState(State expected, State actual);
+    error CircleFull();
+    error AlreadyMember();
+    error NotMember();
+    error FillDeadlinePassed();
+    error FillDeadlineNotPassed();
+    error CircleNotStarted();
+
+    // --- events ---
+
+    event CircleCreated(
+        address indexed token, uint256 contribution, uint8 memberCount, uint32 roundDuration, uint64 fillDeadline
+    );
+    event MemberJoined(address indexed member, uint8 position);
+    event CircleActivated(uint64 roundEnd);
+    event CircleCancelled();
+    event Contributed(address indexed member, uint8 indexed round, uint256 amount);
+    event RoundClosed(uint8 indexed round, address indexed recipient, uint256 collected, uint256 shortfall);
+    event Claimed(address indexed member, uint256 amount);
+    event Repaid(address indexed debtor, address indexed creditor, uint256 amount);
+    event Withdrawn(address indexed member, uint256 amount);
+
+    // --- immutable circle parameters ---
+
+    address public immutable token;
+    uint256 public immutable contribution;
+    uint8 public immutable memberCount;
+    uint32 public immutable roundDuration;
+    uint64 public immutable fillDeadline;
+
+    // --- state ---
+
+    State public state;
+    address[] public order;
+    uint8 public currentRound;
+    uint64 public roundEnd;
+
+    mapping(address member => bool) public isMember;
+    mapping(uint8 round => Round) public rounds;
+
+    // --- modifiers ---
+
+    modifier onlyState(State expected) {
+        if (state != expected) revert WrongState(expected, state);
+        _;
+    }
+
+    modifier onlyMember() {
+        if (!isMember[msg.sender]) revert NotMember();
+        _;
+    }
+
+    /// @dev Allows Active and Completed — both still handle claims and repayments.
+    modifier circleStarted() {
+        if (state == State.Forming || state == State.Cancelled) revert CircleNotStarted();
+        _;
+    }
+
+    constructor(
+        address token_,
+        uint256 contribution_,
+        uint8 memberCount_,
+        uint32 roundDuration_,
+        uint64 fillDeadline_
+    ) {
+        if (token_ == address(0)) revert ZeroAddress();
+        if (contribution_ == 0) revert ZeroContribution();
+        if (memberCount_ < 2 || memberCount_ > 20) revert InvalidMemberCount();
+        if (roundDuration_ == 0) revert InvalidRoundDuration();
+        if (fillDeadline_ <= block.timestamp) revert FillDeadlineInPast();
+
+        token = token_;
+        contribution = contribution_;
+        memberCount = memberCount_;
+        roundDuration = roundDuration_;
+        fillDeadline = fillDeadline_;
+        state = State.Forming;
+
+        emit CircleCreated(token_, contribution_, memberCount_, roundDuration_, fillDeadline_);
+    }
+
+    /// @notice Join the circle. Queue position is assigned in join order.
+    function join() external onlyState(State.Forming) {
+        if (block.timestamp >= fillDeadline) revert FillDeadlinePassed();
+        if (isMember[msg.sender]) revert AlreadyMember();
+        if (order.length >= memberCount) revert CircleFull();
+
+        isMember[msg.sender] = true;
+        order.push(msg.sender);
+
+        emit MemberJoined(msg.sender, uint8(order.length - 1));
+
+        if (order.length == memberCount) {
+            state = State.Active;
+            currentRound = 1;
+            roundEnd = uint64(block.timestamp) + roundDuration;
+            emit CircleActivated(roundEnd);
+        }
+    }
+
+    /// @notice Cancel a circle that failed to fill before its deadline.
+    function cancel() external onlyState(State.Forming) {
+        if (block.timestamp < fillDeadline) revert FillDeadlineNotPassed();
+
+        state = State.Cancelled;
+
+        emit CircleCancelled();
+    }
+
+    /// @notice Pay this round's contribution.
+    function contribute() external onlyState(State.Active) onlyMember {
+        revert NotImplemented();
+    }
+
+    /// @notice Close the current round and advance the queue.
+    function closeRound() external onlyState(State.Active) {
+        revert NotImplemented();
+    }
+
+    /// @notice Claim an unclaimed payout.
+    function claim() external circleStarted {
+        revert NotImplemented();
+    }
+
+    /// @notice Repay a debt owed to a shorted recipient.
+    function repay() external circleStarted {
+        revert NotImplemented();
+    }
+
+    /// @notice Withdraw contributions from a cancelled circle.
+    function withdraw() external onlyState(State.Cancelled) onlyMember {
+        revert NotImplemented();
+    }
+}
