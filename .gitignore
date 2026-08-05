@@ -1,0 +1,16 @@
+# Internal planning docs — not public, see docs/ for public documentation later
+/CLAUDE.md
+/docs/roadmap.md
+/docs/spec.md
+/docs/why.md
+/NOTES.md
+
+# Foundry build artifacts
+/cache/
+/out/
+
+# Secrets
+.env
+
+# OS
+.DS_Store
