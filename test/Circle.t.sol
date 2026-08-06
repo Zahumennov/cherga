@@ -32,11 +32,6 @@ contract CircleTest is Test {
         circle.join();
     }
 
-    function _cancelCircle() internal {
-        vm.warp(fillDeadline);
-        circle.cancel();
-    }
-
     // --- constructor: allowed ---
 
     function test_constructor_setsParametersAndForming() public view {
@@ -223,29 +218,5 @@ contract CircleTest is Test {
         _fillCircle();
         vm.expectRevert(Circle.NotImplemented.selector);
         circle.repay();
-    }
-
-    // --- withdraw(): guard only ---
-
-    function test_withdraw_revertsWhenNotCancelled() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(Circle.WrongState.selector, Circle.State.Cancelled, Circle.State.Forming)
-        );
-        circle.withdraw();
-    }
-
-    function test_withdraw_revertsWhenNotMember() public {
-        _cancelCircle();
-        vm.expectRevert(Circle.NotMember.selector);
-        circle.withdraw();
-    }
-
-    function test_withdraw_reachesStubWhenCancelledMember() public {
-        vm.prank(alice);
-        circle.join();
-        _cancelCircle();
-        vm.expectRevert(Circle.NotImplemented.selector);
-        vm.prank(alice);
-        circle.withdraw();
     }
 }

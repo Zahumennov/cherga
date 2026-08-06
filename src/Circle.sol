@@ -44,7 +44,6 @@ contract Circle {
     event RoundClosed(uint8 indexed round, address indexed recipient, uint256 collected, uint256 shortfall);
     event Claimed(address indexed member, uint256 amount);
     event Repaid(address indexed debtor, address indexed creditor, uint256 amount);
-    event Withdrawn(address indexed member, uint256 amount);
 
     // --- immutable circle parameters ---
 
@@ -150,11 +149,6 @@ contract Circle {
 
     /// @notice Repay a debt owed to a shorted recipient.
     function repay() external circleStarted {
-        revert NotImplemented();
-    }
-
-    /// @notice Withdraw contributions from a cancelled circle.
-    function withdraw() external onlyState(State.Cancelled) onlyMember {
         revert NotImplemented();
     }
 }
