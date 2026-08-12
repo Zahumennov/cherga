@@ -1,5 +1,10 @@
 # Cherga
 
+[![CI](https://github.com/Zahumennov/cherga/actions/workflows/test.yml/badge.svg)](https://github.com/Zahumennov/cherga/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Solidity](https://img.shields.io/badge/solidity-%5E0.8.24-363636)](src/Circle.sol)
+[![Built with Foundry](https://img.shields.io/badge/built%20with-Foundry-orange)](https://getfoundry.sh/)
+
 Cherga (Ukrainian: "queue") is a rotating savings and credit association
 (ROSCA) — implemented as a smart contract.
 
@@ -211,8 +216,18 @@ Enforced via Foundry invariant/fuzz testing:
 
 ## Project status
 
-Early stage — under active development, not deployed, not audited.
-See commit history for current progress.
+Under active development. Not deployed anywhere, not audited.
+
+- [x] Specification
+- [x] State machine (Foundry scaffold, CI, Slither + Aderyn)
+- [x] Money — contributions, payouts, default handling, debt repayment
+- [ ] Factory + invite-only join
+- [ ] Invariant & fuzz testing
+- [ ] Testnet deployment
+- [ ] Frontend
+- [ ] Mainnet pilot
+
+See the commit history for day-to-day progress.
 
 **Do not point real money at this before an audit and before you understand
 the trust model above.**
