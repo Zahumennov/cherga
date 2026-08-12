@@ -2,12 +2,16 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Circle} from "../src/Circle.sol";
+import {MockERC20} from "./mocks/MockERC20.sol";
+import {BadERC20} from "./mocks/BadERC20.sol";
 
 contract CircleTest is Test {
     Circle circle;
+    MockERC20 mockToken;
+    address token;
 
-    address token = makeAddr("token");
     uint256 constant CONTRIBUTION = 100e18;
     uint8 constant MEMBER_COUNT = 3;
     uint32 constant ROUND_DURATION = 30 days;
@@ -19,6 +23,8 @@ contract CircleTest is Test {
     address dave = makeAddr("dave");
 
     function setUp() public {
+        mockToken = new MockERC20();
+        token = address(mockToken);
         fillDeadline = uint64(block.timestamp + 7 days);
         circle = new Circle(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
     }
@@ -30,6 +36,13 @@ contract CircleTest is Test {
         circle.join();
         vm.prank(carol);
         circle.join();
+    }
+
+    /// @dev Mints `contribution` to `member` and approves the circle to pull it.
+    function _fundMember(address member) internal {
+        mockToken.mint(member, CONTRIBUTION);
+        vm.prank(member);
+        mockToken.approve(address(circle), CONTRIBUTION);
     }
 
     // --- constructor: allowed ---
@@ -161,7 +174,26 @@ contract CircleTest is Test {
         circle.cancel();
     }
 
-    // --- contribute(): guard only, body not implemented yet ---
+    // --- contribute(): allowed ---
+
+    function test_contribute_transfersTokenAndRecordsCollected() public {
+        _fillCircle();
+        _fundMember(bob);
+
+        vm.expectEmit(true, true, true, true);
+        emit Circle.Contributed(bob, 1, CONTRIBUTION);
+        vm.prank(bob);
+        circle.contribute();
+
+        assertEq(mockToken.balanceOf(bob), 0);
+        assertEq(mockToken.balanceOf(address(circle)), CONTRIBUTION);
+        assertTrue(circle.hasContributed(1, bob));
+
+        (uint256 collected,) = circle.rounds(1);
+        assertEq(collected, CONTRIBUTION);
+    }
+
+    // --- contribute(): forbidden ---
 
     function test_contribute_revertsWhenNotActive() public {
         vm.expectRevert(abi.encodeWithSelector(Circle.WrongState.selector, Circle.State.Active, Circle.State.Forming));
@@ -174,11 +206,42 @@ contract CircleTest is Test {
         circle.contribute();
     }
 
-    function test_contribute_reachesStubWhenActiveMember() public {
+    function test_contribute_revertsWhenIsRecipient() public {
         _fillCircle();
-        vm.expectRevert(Circle.NotImplemented.selector);
+        vm.expectRevert(Circle.IsRecipient.selector);
         vm.prank(alice);
         circle.contribute();
+    }
+
+    function test_contribute_revertsWhenAlreadyContributed() public {
+        _fillCircle();
+        _fundMember(bob);
+        vm.prank(bob);
+        circle.contribute();
+
+        vm.expectRevert(Circle.AlreadyContributed.selector);
+        vm.prank(bob);
+        circle.contribute();
+    }
+
+    function test_contribute_revertsWithBadToken() public {
+        BadERC20 badToken = new BadERC20();
+        Circle badCircle = new Circle(address(badToken), CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
+
+        vm.prank(alice);
+        badCircle.join();
+        vm.prank(bob);
+        badCircle.join();
+        vm.prank(carol);
+        badCircle.join();
+
+        badToken.mint(bob, CONTRIBUTION);
+        vm.prank(bob);
+        badToken.approve(address(badCircle), CONTRIBUTION);
+
+        vm.expectRevert(abi.encodeWithSelector(SafeERC20.SafeERC20FailedOperation.selector, address(badToken)));
+        vm.prank(bob);
+        badCircle.contribute();
     }
 
     // --- closeRound(): guard only ---

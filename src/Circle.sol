@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 /// @title Circle
 /// @notice A single rotating savings circle (ROSCA). One contract per circle.
 contract Circle {
+    using SafeERC20 for IERC20;
+
     enum State {
         Forming,
         Active,
@@ -31,6 +36,8 @@ contract Circle {
     error FillDeadlinePassed();
     error FillDeadlineNotPassed();
     error CircleNotStarted();
+    error IsRecipient();
+    error AlreadyContributed();
 
     // --- events ---
 
@@ -62,6 +69,7 @@ contract Circle {
 
     mapping(address member => bool) public isMember;
     mapping(uint8 round => Round) public rounds;
+    mapping(uint8 round => mapping(address member => bool)) public hasContributed;
 
     // --- modifiers ---
 
@@ -134,7 +142,15 @@ contract Circle {
 
     /// @notice Pay this round's contribution.
     function contribute() external onlyState(State.Active) onlyMember {
-        revert NotImplemented();
+        if (msg.sender == order[currentRound - 1]) revert IsRecipient();
+        if (hasContributed[currentRound][msg.sender]) revert AlreadyContributed();
+
+        hasContributed[currentRound][msg.sender] = true;
+        rounds[currentRound].collected += contribution;
+
+        emit Contributed(msg.sender, currentRound, contribution);
+
+        IERC20(token).safeTransferFrom(msg.sender, address(this), contribution);
     }
 
     /// @notice Close the current round and advance the queue.
