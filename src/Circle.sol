@@ -83,11 +83,6 @@ contract Circle {
         _;
     }
 
-    modifier onlyMember() {
-        if (!isMember[msg.sender]) revert NotMember();
-        _;
-    }
-
     /// @dev Allows Active and Completed — both still handle claims and repayments.
     modifier circleStarted() {
         if (state == State.Forming || state == State.Cancelled) revert CircleNotStarted();
@@ -146,7 +141,8 @@ contract Circle {
     }
 
     /// @notice Pay this round's contribution.
-    function contribute() external onlyState(State.Active) onlyMember {
+    function contribute() external onlyState(State.Active) {
+        if (!isMember[msg.sender]) revert NotMember();
         if (msg.sender == order[currentRound - 1]) revert IsRecipient();
         if (hasContributed[currentRound][msg.sender]) revert AlreadyContributed();
 
@@ -170,7 +166,8 @@ contract Circle {
 
         rounds[currentRound].closed = true;
 
-        for (uint256 i = 0; i < order.length; i++) {
+        uint256 memberTotal = order.length;
+        for (uint256 i = 0; i < memberTotal; i++) {
             address member = order[i];
             if (member == recipient) continue;
             if (!hasContributed[currentRound][member]) {
