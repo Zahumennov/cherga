@@ -38,6 +38,7 @@ contract Circle {
     error CircleNotStarted();
     error IsRecipient();
     error AlreadyContributed();
+    error RoundNotReady();
 
     // --- events ---
 
@@ -70,6 +71,8 @@ contract Circle {
     mapping(address member => bool) public isMember;
     mapping(uint8 round => Round) public rounds;
     mapping(uint8 round => mapping(address member => bool)) public hasContributed;
+    mapping(address debtor => mapping(address creditor => uint256)) public debts;
+    mapping(address member => uint256) public claimable;
 
     // --- modifiers ---
 
@@ -155,7 +158,34 @@ contract Circle {
 
     /// @notice Close the current round and advance the queue.
     function closeRound() external onlyState(State.Active) {
-        revert NotImplemented();
+        uint256 expected = contribution * (memberCount - 1);
+        uint256 collected = rounds[currentRound].collected;
+
+        if (block.timestamp < roundEnd && collected < expected) revert RoundNotReady();
+
+        address recipient = order[currentRound - 1];
+        uint256 shortfall = expected - collected;
+
+        rounds[currentRound].closed = true;
+
+        for (uint256 i = 0; i < order.length; i++) {
+            address member = order[i];
+            if (member == recipient) continue;
+            if (!hasContributed[currentRound][member]) {
+                debts[member][recipient] += contribution;
+            }
+        }
+
+        claimable[recipient] += collected;
+
+        emit RoundClosed(currentRound, recipient, collected, shortfall);
+
+        if (currentRound == memberCount) {
+            state = State.Completed;
+        } else {
+            currentRound++;
+            roundEnd = uint64(block.timestamp) + roundDuration;
+        }
     }
 
     /// @notice Claim an unclaimed payout.

@@ -45,6 +45,13 @@ contract CircleTest is Test {
         mockToken.approve(address(circle), CONTRIBUTION);
     }
 
+    /// @dev Funds and pays the current round's contribution for `member`.
+    function _payRound(address member) internal {
+        _fundMember(member);
+        vm.prank(member);
+        circle.contribute();
+    }
+
     // --- constructor: allowed ---
 
     function test_constructor_setsParametersAndForming() public view {
@@ -244,16 +251,89 @@ contract CircleTest is Test {
         badCircle.contribute();
     }
 
-    // --- closeRound(): guard only ---
+    // --- closeRound(): allowed ---
+
+    function test_closeRound_closesFullyPaidRoundAfterDeadline() public {
+        _fillCircle();
+        _payRound(bob);
+        _payRound(carol);
+
+        vm.warp(circle.roundEnd());
+
+        vm.expectEmit(true, true, true, true);
+        emit Circle.RoundClosed(1, alice, CONTRIBUTION * 2, 0);
+        circle.closeRound();
+
+        assertEq(circle.claimable(alice), CONTRIBUTION * 2);
+        assertEq(circle.debts(carol, alice), 0);
+        assertEq(circle.currentRound(), 2);
+
+        (, bool closed) = circle.rounds(1);
+        assertTrue(closed);
+    }
+
+    function test_closeRound_closesEarlyWhenFullyPaid() public {
+        _fillCircle();
+        _payRound(bob);
+        _payRound(carol);
+
+        // still well before roundEnd — early close is allowed once everyone paid
+        circle.closeRound();
+
+        assertEq(circle.currentRound(), 2);
+    }
+
+    function test_closeRound_recordsDebtForNonPayer() public {
+        _fillCircle();
+        _payRound(bob);
+        // carol never pays
+
+        vm.warp(circle.roundEnd());
+
+        vm.expectEmit(true, true, true, true);
+        emit Circle.RoundClosed(1, alice, CONTRIBUTION, CONTRIBUTION);
+        circle.closeRound();
+
+        assertEq(circle.claimable(alice), CONTRIBUTION);
+        assertEq(circle.debts(carol, alice), CONTRIBUTION);
+        assertEq(circle.debts(bob, alice), 0);
+    }
+
+    function test_closeRound_setsCompletedAfterLastRound() public {
+        _fillCircle();
+
+        // round 1 — alice is recipient
+        _payRound(bob);
+        _payRound(carol);
+        vm.warp(circle.roundEnd());
+        circle.closeRound();
+
+        // round 2 — bob is recipient
+        _payRound(alice);
+        _payRound(carol);
+        vm.warp(circle.roundEnd());
+        circle.closeRound();
+
+        // round 3 — carol is recipient
+        _payRound(alice);
+        _payRound(bob);
+        vm.warp(circle.roundEnd());
+        circle.closeRound();
+
+        assertEq(uint8(circle.state()), uint8(Circle.State.Completed));
+        assertEq(circle.currentRound(), 3);
+    }
+
+    // --- closeRound(): forbidden ---
 
     function test_closeRound_revertsWhenNotActive() public {
         vm.expectRevert(abi.encodeWithSelector(Circle.WrongState.selector, Circle.State.Active, Circle.State.Forming));
         circle.closeRound();
     }
 
-    function test_closeRound_reachesStubWhenActive() public {
+    function test_closeRound_revertsWhenNotReady() public {
         _fillCircle();
-        vm.expectRevert(Circle.NotImplemented.selector);
+        vm.expectRevert(Circle.RoundNotReady.selector);
         circle.closeRound();
     }
 
