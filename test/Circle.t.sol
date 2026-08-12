@@ -369,16 +369,60 @@ contract CircleTest is Test {
         circle.claim();
     }
 
-    // --- repay(): guard only ---
+    // --- repay(): allowed ---
+
+    function test_repay_transfersToCreditorAndReducesDebt() public {
+        _fillCircle();
+        _payRound(bob);
+        // carol defaults
+        vm.warp(circle.roundEnd());
+        circle.closeRound();
+
+        _fundMember(carol);
+
+        vm.expectEmit(true, true, true, true);
+        emit Circle.Repaid(carol, alice, CONTRIBUTION);
+        vm.prank(carol);
+        circle.repay(alice, CONTRIBUTION);
+
+        assertEq(mockToken.balanceOf(alice), CONTRIBUTION);
+        assertEq(circle.debts(carol, alice), 0);
+    }
+
+    function test_repay_allowsPartialRepayment() public {
+        _fillCircle();
+        _payRound(bob);
+        vm.warp(circle.roundEnd());
+        circle.closeRound();
+
+        uint256 half = CONTRIBUTION / 2;
+        mockToken.mint(carol, half);
+        vm.prank(carol);
+        mockToken.approve(address(circle), half);
+
+        vm.prank(carol);
+        circle.repay(alice, half);
+
+        assertEq(circle.debts(carol, alice), CONTRIBUTION - half);
+    }
+
+    // --- repay(): forbidden ---
 
     function test_repay_revertsWhenNotStarted() public {
         vm.expectRevert(Circle.CircleNotStarted.selector);
-        circle.repay();
+        circle.repay(alice, CONTRIBUTION);
     }
 
-    function test_repay_reachesStubWhenActive() public {
+    function test_repay_revertsWhenZeroAmount() public {
         _fillCircle();
-        vm.expectRevert(Circle.NotImplemented.selector);
-        circle.repay();
+        vm.expectRevert(Circle.ZeroAmount.selector);
+        circle.repay(alice, 0);
+    }
+
+    function test_repay_revertsWhenExceedsDebt() public {
+        _fillCircle();
+        vm.expectRevert(Circle.RepayExceedsDebt.selector);
+        vm.prank(bob);
+        circle.repay(alice, CONTRIBUTION);
     }
 }

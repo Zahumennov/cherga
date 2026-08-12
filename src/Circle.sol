@@ -23,7 +23,6 @@ contract Circle {
 
     // --- errors ---
 
-    error NotImplemented();
     error ZeroAddress();
     error ZeroContribution();
     error InvalidMemberCount();
@@ -40,6 +39,8 @@ contract Circle {
     error AlreadyContributed();
     error RoundNotReady();
     error NothingToClaim();
+    error ZeroAmount();
+    error RepayExceedsDebt();
 
     // --- events ---
 
@@ -202,7 +203,16 @@ contract Circle {
     }
 
     /// @notice Repay a debt owed to a shorted recipient.
-    function repay() external circleStarted {
-        revert NotImplemented();
+    function repay(address creditor, uint256 amount) external circleStarted {
+        if (amount == 0) revert ZeroAmount();
+
+        uint256 owed = debts[msg.sender][creditor];
+        if (amount > owed) revert RepayExceedsDebt();
+
+        debts[msg.sender][creditor] = owed - amount;
+
+        emit Repaid(msg.sender, creditor, amount);
+
+        IERC20(token).safeTransferFrom(msg.sender, creditor, amount);
     }
 }
