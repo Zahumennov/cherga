@@ -39,6 +39,7 @@ contract Circle {
     error IsRecipient();
     error AlreadyContributed();
     error RoundNotReady();
+    error NothingToClaim();
 
     // --- events ---
 
@@ -190,7 +191,14 @@ contract Circle {
 
     /// @notice Claim an unclaimed payout.
     function claim() external circleStarted {
-        revert NotImplemented();
+        uint256 amount = claimable[msg.sender];
+        if (amount == 0) revert NothingToClaim();
+
+        claimable[msg.sender] = 0;
+
+        emit Claimed(msg.sender, amount);
+
+        IERC20(token).safeTransfer(msg.sender, amount);
     }
 
     /// @notice Repay a debt owed to a shorted recipient.

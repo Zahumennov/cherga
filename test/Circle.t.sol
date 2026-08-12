@@ -337,16 +337,35 @@ contract CircleTest is Test {
         circle.closeRound();
     }
 
-    // --- claim(): guard only ---
+    // --- claim(): allowed ---
+
+    function test_claim_transfersClaimableAndZeroesIt() public {
+        _fillCircle();
+        _payRound(bob);
+        _payRound(carol);
+        vm.warp(circle.roundEnd());
+        circle.closeRound();
+
+        vm.expectEmit(true, true, true, true);
+        emit Circle.Claimed(alice, CONTRIBUTION * 2);
+        vm.prank(alice);
+        circle.claim();
+
+        assertEq(mockToken.balanceOf(alice), CONTRIBUTION * 2);
+        assertEq(circle.claimable(alice), 0);
+    }
+
+    // --- claim(): forbidden ---
 
     function test_claim_revertsWhenNotStarted() public {
         vm.expectRevert(Circle.CircleNotStarted.selector);
         circle.claim();
     }
 
-    function test_claim_reachesStubWhenActive() public {
+    function test_claim_revertsWhenNothingToClaim() public {
         _fillCircle();
-        vm.expectRevert(Circle.NotImplemented.selector);
+        vm.expectRevert(Circle.NothingToClaim.selector);
+        vm.prank(bob);
         circle.claim();
     }
 
