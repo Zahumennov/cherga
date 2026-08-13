@@ -41,6 +41,7 @@ contract Circle {
     error NothingToClaim();
     error ZeroAmount();
     error RepayExceedsDebt();
+    error InvalidInvite();
 
     // --- events ---
 
@@ -62,6 +63,7 @@ contract Circle {
     uint8 public immutable memberCount;
     uint32 public immutable roundDuration;
     uint64 public immutable fillDeadline;
+    bytes32 public immutable inviteHash;
 
     // --- state ---
 
@@ -94,7 +96,8 @@ contract Circle {
         uint256 contribution_,
         uint8 memberCount_,
         uint32 roundDuration_,
-        uint64 fillDeadline_
+        uint64 fillDeadline_,
+        bytes32 inviteHash_
     ) {
         if (token_ == address(0)) revert ZeroAddress();
         if (contribution_ == 0) revert ZeroContribution();
@@ -107,13 +110,16 @@ contract Circle {
         memberCount = memberCount_;
         roundDuration = roundDuration_;
         fillDeadline = fillDeadline_;
+        inviteHash = inviteHash_;
         state = State.Forming;
 
         emit CircleCreated(token_, contribution_, memberCount_, roundDuration_, fillDeadline_);
     }
 
     /// @notice Join the circle. Queue position is assigned in join order.
-    function join() external onlyState(State.Forming) {
+    /// @param secret The invite secret; must hash to this circle's inviteHash.
+    function join(bytes32 secret) external onlyState(State.Forming) {
+        if (keccak256(abi.encodePacked(secret)) != inviteHash) revert InvalidInvite();
         if (block.timestamp >= fillDeadline) revert FillDeadlinePassed();
         if (isMember[msg.sender]) revert AlreadyMember();
         if (order.length >= memberCount) revert CircleFull();

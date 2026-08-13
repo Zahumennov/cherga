@@ -11,6 +11,8 @@ import {MockERC20} from "./mocks/MockERC20.sol";
 contract CircleScenarioTest is Test {
     uint256 constant CONTRIBUTION = 100e18;
     uint32 constant ROUND_DURATION = 30 days;
+    bytes32 constant SECRET = keccak256("cherga-test-secret");
+    bytes32 constant INVITE_HASH = keccak256(abi.encodePacked(SECRET));
 
     MockERC20 token;
 
@@ -21,14 +23,14 @@ contract CircleScenarioTest is Test {
     /// @dev Deploys a circle with `n` members who all join immediately, in order.
     function _newCircle(uint8 n) internal returns (Circle circle, address[] memory members) {
         uint64 fillDeadline = uint64(block.timestamp + 7 days);
-        circle = new Circle(address(token), CONTRIBUTION, n, ROUND_DURATION, fillDeadline);
+        circle = new Circle(address(token), CONTRIBUTION, n, ROUND_DURATION, fillDeadline, INVITE_HASH);
 
         members = new address[](n);
         for (uint256 i = 0; i < n; i++) {
             address member = makeAddr(string(abi.encodePacked("member", vm.toString(i))));
             members[i] = member;
             vm.prank(member);
-            circle.join();
+            circle.join(SECRET);
         }
     }
 

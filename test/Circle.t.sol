@@ -15,6 +15,8 @@ contract CircleTest is Test {
     uint256 constant CONTRIBUTION = 100e18;
     uint8 constant MEMBER_COUNT = 3;
     uint32 constant ROUND_DURATION = 30 days;
+    bytes32 constant SECRET = keccak256("cherga-test-secret");
+    bytes32 constant INVITE_HASH = keccak256(abi.encodePacked(SECRET));
     uint64 fillDeadline;
 
     address alice = makeAddr("alice");
@@ -26,16 +28,16 @@ contract CircleTest is Test {
         mockToken = new MockERC20();
         token = address(mockToken);
         fillDeadline = uint64(block.timestamp + 7 days);
-        circle = new Circle(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
+        circle = new Circle(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline, INVITE_HASH);
     }
 
     function _fillCircle() internal {
         vm.prank(alice);
-        circle.join();
+        circle.join(SECRET);
         vm.prank(bob);
-        circle.join();
+        circle.join(SECRET);
         vm.prank(carol);
-        circle.join();
+        circle.join(SECRET);
     }
 
     /// @dev Mints `contribution` to `member` and approves the circle to pull it.
@@ -60,45 +62,46 @@ contract CircleTest is Test {
         assertEq(circle.memberCount(), MEMBER_COUNT);
         assertEq(circle.roundDuration(), ROUND_DURATION);
         assertEq(circle.fillDeadline(), fillDeadline);
+        assertEq(circle.inviteHash(), INVITE_HASH);
         assertEq(uint8(circle.state()), uint8(Circle.State.Forming));
     }
 
     function test_constructor_emitsCircleCreated() public {
         vm.expectEmit(true, true, true, true);
         emit Circle.CircleCreated(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
-        new Circle(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
+        new Circle(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline, INVITE_HASH);
     }
 
     // --- constructor: forbidden ---
 
     function test_constructor_revertsOnZeroAddressToken() public {
         vm.expectRevert(Circle.ZeroAddress.selector);
-        new Circle(address(0), CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
+        new Circle(address(0), CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline, INVITE_HASH);
     }
 
     function test_constructor_revertsOnZeroContribution() public {
         vm.expectRevert(Circle.ZeroContribution.selector);
-        new Circle(token, 0, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
+        new Circle(token, 0, MEMBER_COUNT, ROUND_DURATION, fillDeadline, INVITE_HASH);
     }
 
     function test_constructor_revertsOnMemberCountTooLow() public {
         vm.expectRevert(Circle.InvalidMemberCount.selector);
-        new Circle(token, CONTRIBUTION, 1, ROUND_DURATION, fillDeadline);
+        new Circle(token, CONTRIBUTION, 1, ROUND_DURATION, fillDeadline, INVITE_HASH);
     }
 
     function test_constructor_revertsOnMemberCountTooHigh() public {
         vm.expectRevert(Circle.InvalidMemberCount.selector);
-        new Circle(token, CONTRIBUTION, 21, ROUND_DURATION, fillDeadline);
+        new Circle(token, CONTRIBUTION, 21, ROUND_DURATION, fillDeadline, INVITE_HASH);
     }
 
     function test_constructor_revertsOnZeroRoundDuration() public {
         vm.expectRevert(Circle.InvalidRoundDuration.selector);
-        new Circle(token, CONTRIBUTION, MEMBER_COUNT, 0, fillDeadline);
+        new Circle(token, CONTRIBUTION, MEMBER_COUNT, 0, fillDeadline, INVITE_HASH);
     }
 
     function test_constructor_revertsOnPastFillDeadline() public {
         vm.expectRevert(Circle.FillDeadlineInPast.selector);
-        new Circle(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, uint64(block.timestamp));
+        new Circle(token, CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, uint64(block.timestamp), INVITE_HASH);
     }
 
     // --- join(): allowed ---
@@ -107,7 +110,7 @@ contract CircleTest is Test {
         vm.expectEmit(true, true, true, true);
         emit Circle.MemberJoined(alice, 0);
         vm.prank(alice);
-        circle.join();
+        circle.join(SECRET);
 
         assertTrue(circle.isMember(alice));
         assertEq(circle.order(0), alice);
@@ -116,14 +119,14 @@ contract CircleTest is Test {
 
     function test_join_activatesOnLastMember() public {
         vm.prank(alice);
-        circle.join();
+        circle.join(SECRET);
         vm.prank(bob);
-        circle.join();
+        circle.join(SECRET);
 
         vm.expectEmit(true, true, true, true);
         emit Circle.CircleActivated(uint64(block.timestamp) + ROUND_DURATION);
         vm.prank(carol);
-        circle.join();
+        circle.join(SECRET);
 
         assertEq(uint8(circle.state()), uint8(Circle.State.Active));
         assertEq(circle.currentRound(), 1);
@@ -136,14 +139,14 @@ contract CircleTest is Test {
         _fillCircle();
         vm.expectRevert(abi.encodeWithSelector(Circle.WrongState.selector, Circle.State.Forming, Circle.State.Active));
         vm.prank(dave);
-        circle.join();
+        circle.join(SECRET);
     }
 
     function test_join_revertsWhenAlreadyMember() public {
         vm.startPrank(alice);
-        circle.join();
+        circle.join(SECRET);
         vm.expectRevert(Circle.AlreadyMember.selector);
-        circle.join();
+        circle.join(SECRET);
         vm.stopPrank();
     }
 
@@ -151,14 +154,20 @@ contract CircleTest is Test {
         vm.warp(fillDeadline);
         vm.expectRevert(Circle.FillDeadlinePassed.selector);
         vm.prank(alice);
-        circle.join();
+        circle.join(SECRET);
+    }
+
+    function test_join_revertsWithWrongSecret() public {
+        vm.expectRevert(Circle.InvalidInvite.selector);
+        vm.prank(alice);
+        circle.join(keccak256("wrong-secret"));
     }
 
     // --- cancel(): allowed ---
 
     function test_cancel_movesToCancelled() public {
         vm.prank(alice);
-        circle.join();
+        circle.join(SECRET);
 
         vm.warp(fillDeadline);
         vm.expectEmit(true, true, true, true);
@@ -233,14 +242,15 @@ contract CircleTest is Test {
 
     function test_contribute_revertsWithBadToken() public {
         BadERC20 badToken = new BadERC20();
-        Circle badCircle = new Circle(address(badToken), CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline);
+        Circle badCircle =
+            new Circle(address(badToken), CONTRIBUTION, MEMBER_COUNT, ROUND_DURATION, fillDeadline, INVITE_HASH);
 
         vm.prank(alice);
-        badCircle.join();
+        badCircle.join(SECRET);
         vm.prank(bob);
-        badCircle.join();
+        badCircle.join(SECRET);
         vm.prank(carol);
-        badCircle.join();
+        badCircle.join(SECRET);
 
         badToken.mint(bob, CONTRIBUTION);
         vm.prank(bob);
