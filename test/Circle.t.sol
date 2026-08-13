@@ -301,6 +301,8 @@ contract CircleTest is Test {
         vm.warp(circle.roundEnd());
 
         vm.expectEmit(true, true, true, true);
+        emit Circle.Defaulted(carol, alice, 1, CONTRIBUTION);
+        vm.expectEmit(true, true, true, true);
         emit Circle.RoundClosed(1, alice, CONTRIBUTION, CONTRIBUTION);
         circle.closeRound();
 

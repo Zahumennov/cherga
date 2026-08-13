@@ -55,6 +55,7 @@ contract Circle {
     event RoundClosed(uint8 indexed round, address indexed recipient, uint256 collected, uint256 shortfall);
     event Claimed(address indexed member, uint256 amount);
     event Repaid(address indexed debtor, address indexed creditor, uint256 amount);
+    event Defaulted(address indexed debtor, address indexed creditor, uint8 indexed round, uint256 amount);
 
     // --- immutable circle parameters ---
 
@@ -178,6 +179,7 @@ contract Circle {
             if (member == recipient) continue;
             if (!hasContributed[currentRound][member]) {
                 debts[member][recipient] += contribution;
+                emit Defaulted(member, recipient, currentRound, contribution);
             }
         }
 
