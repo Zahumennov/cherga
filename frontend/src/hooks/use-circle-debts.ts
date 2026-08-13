@@ -1,7 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { useReadContracts, usePublicClient } from "wagmi";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useReadContracts, usePublicClient, useWatchContractEvent } from "wagmi";
 import type { Address } from "viem";
 import { CircleAbi } from "@/lib/contracts";
 
@@ -19,9 +19,11 @@ export interface Debt {
 /// fresh from debts() so partial repay() calls are reflected correctly.
 export function useCircleDebts(circleAddress: Address) {
   const publicClient = usePublicClient();
+  const queryClient = useQueryClient();
+  const candidatesKey = ["circle-debt-candidates", circleAddress] as const;
 
   const { data: candidates } = useQuery({
-    queryKey: ["circle-debt-candidates", circleAddress],
+    queryKey: candidatesKey,
     enabled: !!publicClient,
     queryFn: async () => {
       const logs = await publicClient!.getContractEvents({
@@ -37,6 +39,16 @@ export function useCircleDebts(circleAddress: Address) {
         round: Number(log.args.round),
       }));
     },
+  });
+
+  // closeRound() can emit new Defaulted events at any time, from anyone's
+  // session — the candidate list has to react to that, not just to a
+  // refetch the local caller happens to trigger.
+  useWatchContractEvent({
+    address: circleAddress,
+    abi: CircleAbi,
+    eventName: "Defaulted",
+    onLogs: () => queryClient.invalidateQueries({ queryKey: candidatesKey }),
   });
 
   const { data: amounts } = useReadContracts({

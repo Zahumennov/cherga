@@ -11,7 +11,7 @@ import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useCircleDebts } from "@/hooks/use-circle-debts";
 import { useRoundPayments } from "@/hooks/use-round-payments";
 import { useClaimable } from "@/hooks/use-claimable";
-import { useNow } from "@/hooks/use-now";
+import { useChainTime } from "@/hooks/use-chain-time";
 
 function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState("");
-  const now = useNow();
+  const now = useChainTime();
 
   async function handleCloseRound() {
     if (!publicClient) return;
