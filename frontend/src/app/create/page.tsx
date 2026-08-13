@@ -41,7 +41,9 @@ export default function CreatePage() {
 
   const length = ROUND_LENGTHS.find((l) => l.id === lengthId)!;
   const amountNum = Number(amount) || 0;
-  const pot = size * amountNum;
+  // The recipient never pays into their own round (Circle.sol blocks it —
+  // see IsRecipient()), so the pool is C x (N-1), not C x N.
+  const pot = (size - 1) * amountNum;
   const canSubmit = isConnected && amountNum > 0 && Number(deadlineDays) >= 1 && phase === "form";
 
   const summary = useMemo(

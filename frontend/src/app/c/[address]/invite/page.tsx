@@ -56,7 +56,12 @@ export default function InvitePage() {
   }
 
   const amount = contribution !== undefined ? formatUnits(contribution, 18) : "…";
-  const pot = contribution !== undefined && memberCount ? formatUnits(contribution * BigInt(memberCount), 18) : "…";
+  // The recipient never pays into their own round (Circle.sol blocks it —
+  // see IsRecipient()), so the pool is C x (N-1), not C x N.
+  const pot =
+    contribution !== undefined && memberCount
+      ? formatUnits(contribution * BigInt(memberCount - 1), 18)
+      : "…";
   const deadlineLabel = fillDeadline ? new Date(Number(fillDeadline) * 1000).toLocaleDateString() : "…";
 
   return (
