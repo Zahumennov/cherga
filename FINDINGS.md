@@ -55,3 +55,28 @@ locally).
 
 I8 does not appear — it was retired in stage 4 along with `withdraw()`
 (see `docs/spec.md`, "Change from v0.2").
+
+---
+
+## 2. Echidna — second fuzzer, same seven properties, independently implemented
+
+Deliberately not sharing code with `CircleHandler.sol`/`CircleInvariant.t.sol` —
+`test/echidna/CircleEchidna.sol` re-implements the same I1-I7 checks as
+`echidna_*` boolean properties, using Echidna's own cheatcode interface
+(`hevm.prank`/`hevm.warp`) instead of forge-std's `vm`. The point of a second
+fuzzer is a different exploration strategy, not a second copy of the first one.
+
+**Command:** `echidna test/echidna/CircleEchidna.sol --contract CircleEchidna --config echidna.yaml`
+(`testLimit: 50000` in `echidna.yaml`).
+
+**Result:** 50,257 total calls, 4 parallel workers, ~2 minutes wall clock.
+All 7 properties passing. 0 findings this run.
+
+**Honest caveat:** unlike the Foundry campaign (which found the I2 bug within
+its first 256-run pass), this Echidna run found nothing new. Corpus size
+stayed at 5 sequences and coverage plateaued early (5807 unique instructions),
+which suggests Echidna saturated the state space it could reach faster than
+it explored deeply — not that the contract is proven cleaner by a second
+opinion. Worth revisiting with a longer `testLimit` or `seqLen` tune if this
+project ever needs audit-grade confidence rather than stage-4-of-a-side-project
+confidence.

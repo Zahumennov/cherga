@@ -12,6 +12,10 @@
 # Static analysis reports
 /report.md
 
+# Echidna / crytic-compile run artifacts
+/echidna-corpus/
+/crytic-export/
+
 # Secrets
 .env
 

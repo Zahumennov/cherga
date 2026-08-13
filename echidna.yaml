@@ -1,0 +1,4 @@
+testMode: property
+testLimit: 50000
+corpusDir: echidna-corpus
+cryticArgs: ["--foundry-compile-all"]
