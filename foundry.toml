@@ -2,6 +2,8 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+# DeployLocal.s.sol writes deployed addresses here for the frontend to read.
+fs_permissions = [{ access = "read-write", path = "./frontend/src/generated" }]
 
 [profile.default.invariant]
 runs = 256

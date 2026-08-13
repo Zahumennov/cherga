@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cherga frontend
 
-## Getting Started
+Next.js (App Router) + TypeScript + Tailwind + shadcn/ui, connecting to
+`Circle`/`CircleFactory` via wagmi/viem + ConnectKit.
 
-First, run the development server:
+## Local development (no live testnet yet)
+
+Until the real testnet is up (stage 5), this runs against a local Anvil
+chain. Three terminals, from the **repo root** (not `frontend/`) for the
+first two:
+
+**1. Start a local chain:**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+anvil
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy the private key for `(0)` that it prints — you'll use it below and to
+import that account into a browser wallet for manual testing (it's a public,
+well-known test-only key; it only ever controls funds on your own local chain).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**2. Deploy the contracts:**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key <paste the key from step 1>
+```
 
-## Learn More
+This deploys `CircleFactory` and a mock ERC-20, mints 1,000,000 tokens to the
+deployer, and writes addresses to `frontend/src/generated/local-deployment.json`.
+Re-run this after restarting `anvil` (a fresh chain has no deployed contracts).
 
-To learn more about Next.js, take a look at the following resources:
+**3. Sync the contract ABIs** (only needed after changing `.sol` files):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd frontend
+pnpm sync-abi
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**4. Run the app:**
 
-## Deploy on Vercel
+```bash
+pnpm dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000](http://localhost:3000). Connect with "Browser
+Wallet" (MetaMask or similar) — import one of Anvil's printed test accounts
+to have funds and, after minting, mock tokens to test with.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`frontend/src/generated/` (ABIs + deployment addresses) is gitignored —
+it's regenerated locally, not committed.

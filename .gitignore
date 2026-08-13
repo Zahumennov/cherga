@@ -9,6 +9,12 @@
 /cache/
 /out/
 
+# Local Anvil deployment records — real network broadcasts (stage 5) stay tracked
+/broadcast/*/31337/
+
+# Frontend: generated from Foundry output, regenerate with `pnpm sync-abi` / deploy script
+/frontend/src/generated/
+
 # Static analysis reports
 /report.md
 
