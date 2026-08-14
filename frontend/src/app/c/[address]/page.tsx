@@ -22,6 +22,17 @@ function nameFor(address: Address, account: Address | undefined) {
   return account && address.toLowerCase() === account.toLowerCase() ? "You" : truncate(address);
 }
 
+function BackLink() {
+  return (
+    <Link
+      href="/circles"
+      className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary"
+    >
+      &larr; My circles
+    </Link>
+  );
+}
+
 export default function DashboardPage() {
   const params = useParams<{ address: string }>();
   const circleAddress = params.address as Address;
@@ -71,8 +82,9 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <div className="max-w-[460px] pt-[70px]">
-        <h2 className="mb-2.5 text-[26px] font-normal">Connect a wallet to see this circle</h2>
+      <div className="max-w-[460px] pt-[34px]">
+        <BackLink />
+        <h2 className="mt-6 mb-2.5 text-[26px] font-normal">Connect a wallet to see this circle</h2>
         <p className="text-base text-muted-foreground">
           There is no account and no password. Cherga reads the circle
           straight from the chain, and your wallet is how it knows which
@@ -84,11 +96,14 @@ export default function DashboardPage() {
 
   if (termsLoading || membersLoading || !terms) {
     return (
-      <div className="flex items-center gap-3.5 py-[90px]">
-        <div className="h-[13px] w-[13px] animate-spin rounded-full border-[1.5px] border-[oklch(0.82_0.012_85)] border-t-primary" />
-        <span className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
-          Reading circle history from chain…
-        </span>
+      <div className="pt-[34px]">
+        <BackLink />
+        <div className="flex items-center gap-3.5 py-[56px]">
+          <div className="h-[13px] w-[13px] animate-spin rounded-full border-[1.5px] border-[oklch(0.82_0.012_85)] border-t-primary" />
+          <span className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
+            Reading circle history from chain…
+          </span>
+        </div>
       </div>
     );
   }
@@ -98,7 +113,8 @@ export default function DashboardPage() {
   if (stateName === "Forming") {
     return (
       <div className="pt-[34px]">
-        <p className="text-base text-muted-foreground">
+        <BackLink />
+        <p className="mt-4 text-base text-muted-foreground">
           This circle hasn&rsquo;t started yet — it&rsquo;s still filling
           its seats.{" "}
           <Link href={`/c/${circleAddress}/invite`} className="text-primary">
@@ -113,7 +129,8 @@ export default function DashboardPage() {
   if (stateName === "Cancelled") {
     return (
       <div className="pt-[34px]">
-        <p className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
+        <BackLink />
+        <p className="mt-4 border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
           This circle was cancelled — it never filled up before its
           deadline. Nobody paid anything, so there is nothing to settle.
         </p>
@@ -157,7 +174,8 @@ export default function DashboardPage() {
 
   return (
     <div className="pt-[30px]">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <BackLink />
+      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h2 className="text-[28px] font-normal">Circle {truncate(circleAddress)}</h2>
           <div className="mt-1.5 font-mono text-[11px] tracking-[-0.02em] text-muted-foreground">
