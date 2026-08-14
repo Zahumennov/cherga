@@ -2,6 +2,9 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+# Pinned (not "auto") so a real deploy's bytecode is reproducible and
+# verify-contract's compiler version always matches what was deployed.
+solc = "0.8.35"
 # DeployLocal.s.sol writes deployed addresses here for the frontend to read.
 fs_permissions = [{ access = "read-write", path = "./frontend/src/generated" }]
 
