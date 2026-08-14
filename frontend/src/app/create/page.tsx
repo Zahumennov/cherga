@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { decodeEventLog, parseUnits, type Address } from "viem";
@@ -104,6 +105,12 @@ export default function CreatePage() {
 
   return (
     <div className="pt-[34px]">
+      <Link
+        href="/"
+        className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary"
+      >
+        &larr; Back
+      </Link>
       <h2 className="mt-4 mb-1 text-[30px] font-normal">Create a circle</h2>
       <p className="mb-[30px] text-base text-muted-foreground">
         Set the terms once. They can&rsquo;t be changed after the circle is
