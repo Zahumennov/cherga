@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
 import { formatUnits, type Address, type Hex } from "viem";
-import { CircleAbi, tokens } from "@/lib/contracts";
+import { CircleAbi, getTokens } from "@/lib/contracts";
 import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useCircleCreator } from "@/hooks/use-circle-creator";
 import { useWindowLocationHash } from "@/hooks/use-window-location";
@@ -38,6 +38,7 @@ export default function JoinPage() {
   const { address: account, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
+  const tokens = getTokens(useChainId());
   const [phase, setPhase] = useState<"idle" | "joining" | "error">("idle");
   const [error, setError] = useState("");
 

@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAccount, usePublicClient, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { decodeEventLog, parseUnits, type Address } from "viem";
-import { circleFactoryAddress, tokens, CircleFactoryAbi } from "@/lib/contracts";
+import { getCircleFactoryAddress, getTokens, CircleFactoryAbi } from "@/lib/contracts";
 import { generateSecret, inviteHashFor } from "@/lib/secret";
 import { waitForSuccess } from "@/lib/tx";
 
@@ -31,6 +31,8 @@ export default function CreatePage() {
   const { isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
+  const chainId = useChainId();
+  const tokens = useMemo(() => getTokens(chainId), [chainId]);
 
   const token = tokens[0];
   const [amount, setAmount] = useState("100");
@@ -65,7 +67,7 @@ export default function CreatePage() {
       const fillDeadline = BigInt(Math.floor(Date.now() / 1000) + Number(deadlineDays) * 86400);
 
       const createHash = await writeContractAsync({
-        address: circleFactoryAddress,
+        address: getCircleFactoryAddress(chainId),
         abi: CircleFactoryAbi,
         functionName: "create",
         args: [token.address, contribution, size, length.seconds, fillDeadline, inviteHash],

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { formatUnits, type Address } from "viem";
-import { CircleAbi, tokens } from "@/lib/contracts";
+import { CircleAbi, getTokens } from "@/lib/contracts";
 import { useCircleTerms, STATE_NAMES } from "@/hooks/use-circle-terms";
 import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useCircleDebts } from "@/hooks/use-circle-debts";
@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const circleAddress = params.address as Address;
   const { address: account, isConnected } = useAccount();
   const publicClient = usePublicClient();
+  const tokens = getTokens(useChainId());
   const { writeContractAsync } = useWriteContract();
 
   const { terms, isLoading: termsLoading, refetch: refetchTerms } = useCircleTerms(circleAddress);

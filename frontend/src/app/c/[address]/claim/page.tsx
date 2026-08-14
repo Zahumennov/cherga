@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useAccount, usePublicClient, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { formatUnits, type Address } from "viem";
-import { CircleAbi, tokens } from "@/lib/contracts";
+import { CircleAbi, getTokens } from "@/lib/contracts";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useClaimable } from "@/hooks/use-claimable";
 import { waitForSuccess } from "@/lib/tx";
@@ -23,6 +23,7 @@ export default function ClaimPage() {
   const { address: account } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
+  const tokens = getTokens(useChainId());
 
   const { terms } = useCircleTerms(circleAddress);
   const { claimable, refetch } = useClaimable(circleAddress, account);

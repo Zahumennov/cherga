@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { formatUnits } from "viem";
-import { tokens } from "@/lib/contracts";
+import { getTokens } from "@/lib/contracts";
 import { useMyCircles, type MyCircle } from "@/hooks/use-my-circles";
 import { useChainTime } from "@/hooks/use-chain-time";
 
@@ -62,6 +62,8 @@ function actionFor(c: MyCircle, symbol: string) {
 export default function MyCirclesPage() {
   const router = useRouter();
   const { address: account, isConnected } = useAccount();
+  const chainId = useChainId();
+  const tokens = getTokens(chainId);
   const { data: circles, isLoading } = useMyCircles(account);
   const now = useChainTime();
 

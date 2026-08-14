@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { usePublicClient } from "wagmi";
+import { usePublicClient, useChainId } from "wagmi";
 import type { Address } from "viem";
-import { CircleAbi } from "@/lib/contracts";
+import { CircleAbi, getFromBlock } from "@/lib/contracts";
+import { getContractEventsChunked } from "@/lib/logs";
 
 export const STATE_NAMES = ["Forming", "Active", "Cancelled", "Completed"] as const;
 export type CircleState = (typeof STATE_NAMES)[number];
@@ -34,18 +35,18 @@ export interface MyCircle {
 /// created in this browser session.
 export function useMyCircles(account: Address | undefined) {
   const publicClient = usePublicClient();
+  const chainId = useChainId();
 
   return useQuery({
-    queryKey: ["my-circles", account],
+    queryKey: ["my-circles", chainId, account],
     enabled: !!publicClient && !!account,
     refetchInterval: 8000,
     queryFn: async (): Promise<MyCircle[]> => {
-      const joinLogs = await publicClient!.getContractEvents({
+      const joinLogs = await getContractEventsChunked(publicClient!, {
         abi: CircleAbi,
         eventName: "MemberJoined",
         args: { member: account! },
-        fromBlock: 0n,
-        toBlock: "latest",
+        fromBlock: getFromBlock(chainId),
       });
 
       return Promise.all(
@@ -75,12 +76,11 @@ export function useMyCircles(account: Address | undefined) {
           let hasPaidThisRound = false;
 
           if (state === 0) {
-            const allJoinLogs = await publicClient!.getContractEvents({
+            const allJoinLogs = await getContractEventsChunked(publicClient!, {
               address,
               abi: CircleAbi,
               eventName: "MemberJoined",
-              fromBlock: 0n,
-              toBlock: "latest",
+              fromBlock: getFromBlock(chainId),
             });
             joinedCount = allJoinLogs.length;
           } else if (state === 1) {
@@ -111,21 +111,19 @@ export function useMyCircles(account: Address | undefined) {
           let owedAmount = 0n;
           if (state !== 0) {
             const [asDebtor, asCreditor] = await Promise.all([
-              publicClient!.getContractEvents({
+              getContractEventsChunked(publicClient!, {
                 address,
                 abi: CircleAbi,
                 eventName: "Defaulted",
                 args: { debtor: account },
-                fromBlock: 0n,
-                toBlock: "latest",
+                fromBlock: getFromBlock(chainId),
               }),
-              publicClient!.getContractEvents({
+              getContractEventsChunked(publicClient!, {
                 address,
                 abi: CircleAbi,
                 eventName: "Defaulted",
                 args: { creditor: account },
-                fromBlock: 0n,
-                toBlock: "latest",
+                fromBlock: getFromBlock(chainId),
               }),
             ]);
             const creditors = [...new Set(asDebtor.map((l) => l.args.creditor as Address))];

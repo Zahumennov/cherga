@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useReadContracts, usePublicClient, useWatchContractEvent } from "wagmi";
+import { useReadContracts, usePublicClient, useChainId, useWatchContractEvent } from "wagmi";
 import type { Address } from "viem";
-import { CircleAbi } from "@/lib/contracts";
+import { CircleAbi, getFromBlock } from "@/lib/contracts";
+import { getContractEventsChunked } from "@/lib/logs";
 
 export interface Debt {
   debtor: Address;
@@ -19,19 +20,19 @@ export interface Debt {
 /// fresh from debts() so partial repay() calls are reflected correctly.
 export function useCircleDebts(circleAddress: Address) {
   const publicClient = usePublicClient();
+  const chainId = useChainId();
   const queryClient = useQueryClient();
-  const candidatesKey = ["circle-debt-candidates", circleAddress] as const;
+  const candidatesKey = ["circle-debt-candidates", chainId, circleAddress] as const;
 
   const { data: candidates } = useQuery({
     queryKey: candidatesKey,
     enabled: !!publicClient,
     queryFn: async () => {
-      const logs = await publicClient!.getContractEvents({
+      const logs = await getContractEventsChunked(publicClient!, {
         address: circleAddress,
         abi: CircleAbi,
         eventName: "Defaulted",
-        fromBlock: 0n,
-        toBlock: "latest",
+        fromBlock: getFromBlock(chainId),
       });
       return logs.map((log) => ({
         debtor: log.args.debtor as Address,

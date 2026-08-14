@@ -2,8 +2,9 @@ import { createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { defineChain } from "viem";
 
-// Not a real network — Foundry's local dev chain (`anvil`). Real chains
-// (Whitechain + one L2 testnet) get their own config in stage 5.
+// Not a real network — Foundry's local dev chain (`anvil`), for
+// development while iterating on contracts/UI without spending real
+// testnet gas.
 export const anvilLocal = defineChain({
   id: 31337,
   name: "Anvil Local",
@@ -13,11 +14,26 @@ export const anvilLocal = defineChain({
   },
 });
 
+// The only real network Cherga deploys to — see DEPLOYMENTS.md.
+export const whitechainSepolia = defineChain({
+  id: 1874,
+  name: "Whitechain Sepolia",
+  nativeCurrency: { name: "WhiteBIT Coin", symbol: "WBT", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc.testnet.whitechain.io"] },
+  },
+  blockExplorers: {
+    default: { name: "Blockscout", url: "https://explorer.testnet.whitechain.io" },
+  },
+  testnet: true,
+});
+
 export const wagmiConfig = createConfig({
-  chains: [anvilLocal],
+  chains: [whitechainSepolia, anvilLocal],
   connectors: [injected()],
   transports: {
     [anvilLocal.id]: http(),
+    [whitechainSepolia.id]: http(),
   },
   ssr: true,
 });
