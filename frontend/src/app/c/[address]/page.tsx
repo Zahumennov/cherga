@@ -176,7 +176,7 @@ export default function DashboardPage() {
             The queue · payout order
           </div>
           <div className="font-mono text-[9.5px] text-muted-foreground">
-            paid out · paying now · waiting
+            paid out · receiving now · waiting
           </div>
         </div>
         <div className="mt-3.5 flex overflow-x-auto border-t border-b border-[oklch(0.88_0.012_85)]">
@@ -219,7 +219,7 @@ export default function DashboardPage() {
                     (current ? "text-primary" : "text-[oklch(0.58_0.012_85)]")
                   }
                 >
-                  {past ? "paid out" : current ? "paying now" : "waiting"}
+                  {past ? "paid out" : current ? "receiving now" : "waiting"}
                 </div>
                 <div
                   className={
