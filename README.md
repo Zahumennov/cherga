@@ -221,10 +221,11 @@ Under active development. Not deployed anywhere, not audited.
 - [x] Specification
 - [x] State machine (Foundry scaffold, CI, Slither + Aderyn)
 - [x] Money — contributions, payouts, default handling, debt repayment
-- [ ] Factory + invite-only join
-- [ ] Invariant & fuzz testing
-- [ ] Testnet deployment
-- [ ] Frontend
+- [x] Factory + invite-only join
+- [x] Invariant & fuzz testing (see [`FINDINGS.md`](FINDINGS.md))
+- [ ] Testnet deployment — blocked on the target testnet's own launch
+- [ ] Frontend — in progress, built and tested against a local chain in
+      the meantime
 - [ ] Mainnet pilot
 
 See the commit history for day-to-day progress.
