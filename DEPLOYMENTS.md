@@ -30,9 +30,3 @@ Deployment transactions:
 - `CircleFactory` create: [`0xdc3695dc…9e214cbc`](https://explorer.testnet.whitechain.io/tx/0xdc3695dcee9fa8b3c7b7b78c3c4b8e44dd4628447f2c204cb35ce0169e214cbc)
 - Initial `mint(deployer, 1_000_000e18)`: [`0x4b8537c7…0633caa`](https://explorer.testnet.whitechain.io/tx/0x4b8537c7ab83d0f8a588882468456ab5b7efca7ddd1f9e288782f5f8e0633caa)
 
----
-
-## Second testnet (popular L2)
-
-Not deployed yet — `docs/roadmap.md` stage 5 also calls for one popular L2
-testnet alongside Whitechain. Separate step.

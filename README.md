@@ -210,22 +210,22 @@ Enforced via Foundry invariant/fuzz testing:
 - **Contracts:** [Foundry](https://getfoundry.sh/), Solidity `^0.8.24`, OpenZeppelin (`SafeERC20`)
 - **Frontend:** Next.js (App Router), TypeScript, wagmi + viem, a wallet
   connector (ConnectKit / RainbowKit), Tailwind + shadcn/ui
-- **Networks:** Whitechain + one popular L2. Intentionally nothing beyond that.
+- **Networks:** Whitechain only. Intentionally nothing beyond that.
 
 ---
 
 ## Project status
 
-Under active development. Not deployed anywhere, not audited.
+Under active development. Deployed to Whitechain testnet only, not
+audited — do not point real money at it.
 
 - [x] Specification
 - [x] State machine (Foundry scaffold, CI, Slither + Aderyn)
 - [x] Money — contributions, payouts, default handling, debt repayment
 - [x] Factory + invite-only join
 - [x] Invariant & fuzz testing (see [`FINDINGS.md`](FINDINGS.md))
-- [ ] Testnet deployment — blocked on the target testnet's own launch
-- [ ] Frontend — in progress, built and tested against a local chain in
-      the meantime
+- [x] Testnet deployment (see [`DEPLOYMENTS.md`](DEPLOYMENTS.md))
+- [ ] Frontend — in progress, built and tested against a local chain so far
 - [ ] Mainnet pilot
 
 See the commit history for day-to-day progress.
