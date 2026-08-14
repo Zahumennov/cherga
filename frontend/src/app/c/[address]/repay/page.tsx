@@ -9,6 +9,7 @@ import { CircleAbi, tokens } from "@/lib/contracts";
 import { erc20Abi } from "@/lib/erc20";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useCircleDebts } from "@/hooks/use-circle-debts";
+import { waitForSuccess } from "@/lib/tx";
 
 type Phase = "confirm" | "approving" | "paying" | "done" | "error";
 
@@ -76,7 +77,7 @@ export default function RepayPage() {
           functionName: "approve",
           args: [circleAddress, amount],
         });
-        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        await waitForSuccess(publicClient, approveHash);
       }
 
       setPhase("paying");
@@ -86,7 +87,7 @@ export default function RepayPage() {
         functionName: "repay",
         args: [selected.creditor, amount],
       });
-      await publicClient.waitForTransactionReceipt({ hash });
+      await waitForSuccess(publicClient, hash);
       setPaidAmount(amount);
       setPaidTo(selected.creditor);
       setPhase("done");

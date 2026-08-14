@@ -9,6 +9,7 @@ import { CircleAbi, tokens } from "@/lib/contracts";
 import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useCircleCreator } from "@/hooks/use-circle-creator";
 import { useWindowLocationHash } from "@/hooks/use-window-location";
+import { waitForSuccess } from "@/lib/tx";
 
 const STATE_NAMES = ["Forming", "Active", "Cancelled", "Completed"] as const;
 
@@ -89,7 +90,7 @@ export default function JoinPage() {
         functionName: "join",
         args: [secret],
       });
-      await publicClient.waitForTransactionReceipt({ hash: joinHash });
+      await waitForSuccess(publicClient, joinHash);
       router.push(`/c/${circleAddress}/invite#s=${secret}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

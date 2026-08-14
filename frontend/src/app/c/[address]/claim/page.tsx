@@ -8,6 +8,7 @@ import { formatUnits, type Address } from "viem";
 import { CircleAbi, tokens } from "@/lib/contracts";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useClaimable } from "@/hooks/use-claimable";
+import { waitForSuccess } from "@/lib/tx";
 
 type Phase = "confirm" | "claiming" | "done" | "error";
 
@@ -42,7 +43,7 @@ export default function ClaimPage() {
         abi: CircleAbi,
         functionName: "claim",
       });
-      await publicClient.waitForTransactionReceipt({ hash });
+      await waitForSuccess(publicClient, hash);
       setClaimedAmount(amount);
       await refetch();
       setPhase("done");

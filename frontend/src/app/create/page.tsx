@@ -6,6 +6,7 @@ import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { decodeEventLog, parseUnits, type Address } from "viem";
 import { circleFactoryAddress, tokens, CircleFactoryAbi } from "@/lib/contracts";
 import { generateSecret, inviteHashFor } from "@/lib/secret";
+import { waitForSuccess } from "@/lib/tx";
 
 const ROUND_LENGTHS = [
   { id: "weekly", label: "Weekly", word: "weekly", seconds: 7 * 86400 },
@@ -68,7 +69,7 @@ export default function CreatePage() {
         functionName: "create",
         args: [token.address, contribution, size, length.seconds, fillDeadline, inviteHash],
       });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: createHash });
+      const receipt = await waitForSuccess(publicClient, createHash);
 
       let circleAddress: Address | null = null;
       for (const log of receipt.logs) {
@@ -92,7 +93,7 @@ export default function CreatePage() {
         functionName: "join",
         args: [secret],
       });
-      await publicClient.waitForTransactionReceipt({ hash: joinHash });
+      await waitForSuccess(publicClient, joinHash);
 
       router.push(`/c/${circleAddress}/invite#s=${secret}`);
     } catch (err) {

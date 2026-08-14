@@ -9,6 +9,7 @@ import { CircleAbi, tokens } from "@/lib/contracts";
 import { erc20Abi } from "@/lib/erc20";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useCircleMembers } from "@/hooks/use-circle-members";
+import { waitForSuccess } from "@/lib/tx";
 
 function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -61,7 +62,7 @@ export default function ContributePage() {
           functionName: "approve",
           args: [circleAddress, terms.contribution],
         });
-        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        await waitForSuccess(publicClient, approveHash);
       }
 
       setPhase("paying");
@@ -70,7 +71,7 @@ export default function ContributePage() {
         abi: CircleAbi,
         functionName: "contribute",
       });
-      await publicClient.waitForTransactionReceipt({ hash: payHash });
+      await waitForSuccess(publicClient, payHash);
       await refetchRound();
       setPhase("done");
     } catch (err) {

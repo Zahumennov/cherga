@@ -12,6 +12,7 @@ import { useCircleDebts } from "@/hooks/use-circle-debts";
 import { useRoundPayments } from "@/hooks/use-round-payments";
 import { useClaimable } from "@/hooks/use-claimable";
 import { useChainTime } from "@/hooks/use-chain-time";
+import { waitForSuccess } from "@/lib/tx";
 
 function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -59,7 +60,7 @@ export default function DashboardPage() {
         abi: CircleAbi,
         functionName: "closeRound",
       });
-      await publicClient.waitForTransactionReceipt({ hash });
+      await waitForSuccess(publicClient, hash);
       await Promise.all([refetchTerms(), refetchClaimable()]);
     } catch (err) {
       setCloseError(err instanceof Error ? err.message : "Couldn't close the round.");
