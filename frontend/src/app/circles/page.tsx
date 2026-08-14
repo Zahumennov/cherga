@@ -21,6 +21,17 @@ function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+function BackLink() {
+  return (
+    <Link
+      href="/"
+      className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary"
+    >
+      &larr; Back
+    </Link>
+  );
+}
+
 function daysLeft(deadline: bigint, now: number) {
   const secs = Number(deadline) - now;
   if (secs <= 0) return "any moment";
@@ -56,8 +67,9 @@ export default function MyCirclesPage() {
 
   if (!isConnected) {
     return (
-      <div className="max-w-[460px] py-[70px]">
-        <h2 className="mb-2.5 text-[26px] font-normal">
+      <div className="max-w-[460px] pt-[34px]">
+        <BackLink />
+        <h2 className="mt-6 mb-2.5 text-[26px] font-normal">
           Connect a wallet to see your circles
         </h2>
         <p className="text-base text-[oklch(0.45_0.012_85)]">
@@ -71,19 +83,23 @@ export default function MyCirclesPage() {
 
   if (isLoading || !circles) {
     return (
-      <div className="flex items-center gap-3.5 py-[90px]">
-        <div className="h-[13px] w-[13px] animate-spin rounded-full border-[1.5px] border-[oklch(0.82_0.012_85)] border-t-primary" />
-        <span className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
-          Looking for circles that name your address…
-        </span>
+      <div className="pt-[34px]">
+        <BackLink />
+        <div className="flex items-center gap-3.5 py-[56px]">
+          <div className="h-[13px] w-[13px] animate-spin rounded-full border-[1.5px] border-[oklch(0.82_0.012_85)] border-t-primary" />
+          <span className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
+            Looking for circles that name your address…
+          </span>
+        </div>
       </div>
     );
   }
 
   if (circles.length === 0) {
     return (
-      <div className="pt-1.5">
-        <h2 className="mb-2.5 text-[30px] font-normal">No circles yet</h2>
+      <div className="pt-[34px]">
+        <BackLink />
+        <h2 className="mt-4 mb-2.5 text-[30px] font-normal">No circles yet</h2>
         <p className="mb-2 max-w-[560px] text-[17px] text-[oklch(0.38_0.012_85)]">
           This wallet hasn&rsquo;t joined a circle. When you create one or
           open an invite link, it will appear here — found by your address,
@@ -123,8 +139,9 @@ export default function MyCirclesPage() {
     .filter((g) => g.rows.length > 0);
 
   return (
-    <div>
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+    <div className="pt-[34px]">
+      <BackLink />
+      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h2 className="text-[28px] font-normal">My circles</h2>
           <div className="mt-1.5 font-mono text-[10px] text-[oklch(0.55_0.012_85)]">
