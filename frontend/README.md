@@ -46,8 +46,10 @@ Open [http://localhost:3000](http://localhost:3000). Connect with "Browser
 Wallet" (MetaMask or similar) — import one of Anvil's printed test accounts
 to have funds and, after minting, mock tokens to test with.
 
-`frontend/src/generated/` (ABIs + deployment addresses) is gitignored —
-it's regenerated locally, not committed.
+`frontend/src/generated/` (ABIs + the local Anvil deployment address) is
+committed — CI/deploy environments don't have Foundry to regenerate it.
+Re-run `pnpm sync-abi` and re-deploy locally after changing a contract,
+and commit the result.
 
 ## Deploying
 
