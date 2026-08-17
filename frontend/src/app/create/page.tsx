@@ -3,11 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { decodeEventLog, parseUnits, type Address } from "viem";
 import { getCircleFactoryAddress, getTokens, CircleFactoryAbi } from "@/lib/contracts";
 import { circleUrl } from "@/lib/circle-url";
-import { whitechainSepolia } from "@/lib/wagmi";
 import { generateSecret, inviteHashFor } from "@/lib/secret";
 import { waitForSuccess } from "@/lib/tx";
 
@@ -32,7 +31,6 @@ export default function CreatePage() {
   const router = useRouter();
   const { isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const { switchChain } = useSwitchChain();
   const publicClient = usePublicClient();
   const chainId = useChainId();
   const tokens = useMemo(() => getTokens(chainId), [chainId]);
@@ -123,30 +121,6 @@ export default function CreatePage() {
       </p>
 
       <div className="border-t border-[oklch(0.86_0.012_85)]">
-        <div className="grid grid-cols-1 items-baseline gap-x-6 border-b border-[oklch(0.9_0.012_85)] py-4 sm:grid-cols-[190px_1fr] max-sm:gap-y-[9px]">
-          <div className="font-mono text-[10.5px] tracking-[0.06em] text-[oklch(0.45_0.012_85)] uppercase">
-            Network
-          </div>
-          <div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => switchChain({ chainId: whitechainSepolia.id })}
-                className={chipClass(true)}
-              >
-                Whitechain testnet
-              </button>
-              <span className={chipClass(false) + " cursor-not-allowed opacity-60"}>
-                Whitechain mainnet — soon
-              </span>
-            </div>
-            <div className="mt-1.5 text-[15px] text-[oklch(0.45_0.012_85)]">
-              Testnet tokens have no value. Nothing you do here moves real
-              money.
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 items-baseline gap-x-6 border-b border-[oklch(0.9_0.012_85)] py-4 sm:grid-cols-[190px_1fr] max-sm:gap-y-[9px]">
           <div className="font-mono text-[10.5px] tracking-[0.06em] text-[oklch(0.45_0.012_85)] uppercase">
             Token

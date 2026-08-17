@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectKitButton } from "connectkit";
-import { useAccount, useSwitchChain } from "wagmi";
+import { useAccount } from "wagmi";
 import { useMyCircles, type MyCircle } from "@/hooks/use-my-circles";
-import { whitechainSepolia } from "@/lib/wagmi";
 
 function needsYouCount(circles: MyCircle[] | undefined) {
   if (!circles) return 0;
@@ -21,7 +20,6 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { address: account, isConnected } = useAccount();
   const { data: circles } = useMyCircles(account);
-  const { switchChain } = useSwitchChain();
   const badge = needsYouCount(circles);
   const onCircles = pathname === "/circles";
 
@@ -52,17 +50,6 @@ export function SiteHeader() {
             )}
           </Link>
         )}
-        <select
-          value="whitechain-testnet"
-          onChange={() => switchChain({ chainId: whitechainSepolia.id })}
-          title="Network"
-          className="max-w-[190px] cursor-pointer border border-border bg-transparent px-1.5 py-[5px] font-mono text-[9.5px] tracking-[0.04em] text-[oklch(0.4_0.012_85)] uppercase max-sm:max-w-none max-sm:flex-1"
-        >
-          <option value="whitechain-testnet">Whitechain testnet</option>
-          <option value="whitechain" disabled>
-            Whitechain mainnet — soon
-          </option>
-        </select>
         <ConnectKitButton.Custom>
           {({ show, truncatedAddress }) => (
             <div className="flex items-center gap-3">
