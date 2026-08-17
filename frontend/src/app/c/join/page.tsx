@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
 import { formatUnits, type Address, type Hex } from "viem";
 import { CircleAbi, getTokens } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useCircleCreator } from "@/hooks/use-circle-creator";
 import { useWindowLocationHash } from "@/hooks/use-window-location";
@@ -26,9 +27,8 @@ function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-export default function JoinPage() {
-  const params = useParams<{ address: string }>();
-  const circleAddress = params.address as Address;
+function JoinInner() {
+  const circleAddress = useSearchParams().get("address") as Address | null;
   const router = useRouter();
 
   const hash = useWindowLocationHash();
@@ -44,19 +44,20 @@ export default function JoinPage() {
 
   const { data } = useReadContracts({
     contracts: [
-      { address: circleAddress, abi: CircleAbi, functionName: "contribution" },
-      { address: circleAddress, abi: CircleAbi, functionName: "memberCount" },
-      { address: circleAddress, abi: CircleAbi, functionName: "roundDuration" },
-      { address: circleAddress, abi: CircleAbi, functionName: "fillDeadline" },
-      { address: circleAddress, abi: CircleAbi, functionName: "token" },
-      { address: circleAddress, abi: CircleAbi, functionName: "state" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "contribution" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "memberCount" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "roundDuration" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "fillDeadline" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "token" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "state" },
       {
-        address: circleAddress,
+        address: circleAddress ?? "0x0",
         abi: CircleAbi,
         functionName: "isMember",
         args: [account ?? "0x0000000000000000000000000000000000000000"],
       },
     ],
+    query: { enabled: !!circleAddress },
   });
 
   const contribution = data?.[0]?.result as bigint | undefined;
@@ -67,8 +68,8 @@ export default function JoinPage() {
   const stateIndex = data?.[5]?.result as number | undefined;
   const alreadyMember = data?.[6]?.result as boolean | undefined;
 
-  const { members } = useCircleMembers(circleAddress);
-  const { data: creator } = useCircleCreator(circleAddress);
+  const { members } = useCircleMembers(circleAddress ?? "0x0");
+  const { data: creator } = useCircleCreator(circleAddress ?? "0x0");
 
   const tokenSymbol = tokens.find((t) => t.address.toLowerCase() === tokenAddress?.toLowerCase())?.symbol ?? "?";
   const amount = contribution !== undefined ? formatUnits(contribution, 18) : "…";
@@ -81,7 +82,7 @@ export default function JoinPage() {
   const target = memberCount ?? 0;
 
   async function handleJoin() {
-    if (!publicClient || !secret) return;
+    if (!publicClient || !secret || !circleAddress) return;
     setError("");
     setPhase("joining");
     try {
@@ -92,11 +93,21 @@ export default function JoinPage() {
         args: [secret],
       });
       await waitForSuccess(publicClient, joinHash);
-      router.push(`/c/${circleAddress}/invite#s=${secret}`);
+      router.push(`${circleUrl(circleAddress, "invite")}#s=${secret}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setPhase("error");
     }
+  }
+
+  if (!circleAddress) {
+    return (
+      <div className="pt-[34px]">
+        <p className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
+          No circle address in this link.
+        </p>
+      </div>
+    );
   }
 
   if (!secret) {
@@ -232,5 +243,13 @@ export default function JoinPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={<div className="pt-[34px] text-muted-foreground">Loading…</div>}>
+      <JoinInner />
+    </Suspense>
   );
 }

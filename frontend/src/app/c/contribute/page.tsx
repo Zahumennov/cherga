@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { formatUnits, type Address } from "viem";
 import { CircleAbi, getTokens } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { erc20Abi } from "@/lib/erc20";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useCircleMembers } from "@/hooks/use-circle-members";
@@ -17,26 +18,25 @@ function truncate(address: string) {
 
 type Phase = "confirm" | "approving" | "paying" | "done" | "error";
 
-export default function ContributePage() {
-  const params = useParams<{ address: string }>();
-  const circleAddress = params.address as Address;
+function ContributeInner() {
+  const circleAddress = useSearchParams().get("address") as Address | null;
   const router = useRouter();
   const { address: account } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
   const tokens = getTokens(useChainId());
 
-  const { terms } = useCircleTerms(circleAddress);
-  const { members } = useCircleMembers(circleAddress);
+  const { terms } = useCircleTerms(circleAddress ?? "0x0");
+  const { members } = useCircleMembers(circleAddress ?? "0x0");
   const recipient = terms ? members.find((m) => m.position === terms.currentRound - 1) : undefined;
   const tokenSymbol = tokens.find((t) => t.address.toLowerCase() === terms?.token.toLowerCase())?.symbol ?? "?";
 
   const { data: roundData, refetch: refetchRound } = useReadContract({
-    address: circleAddress,
+    address: circleAddress ?? "0x0",
     abi: CircleAbi,
     functionName: "rounds",
     args: [terms?.currentRound ?? 0],
-    query: { enabled: !!terms },
+    query: { enabled: !!terms && !!circleAddress },
   });
   const collected = (roundData as readonly [bigint, boolean] | undefined)?.[0] ?? 0n;
   const expected = terms ? terms.contribution * BigInt(terms.memberCount - 1) : 0n;
@@ -45,7 +45,7 @@ export default function ContributePage() {
   const [error, setError] = useState("");
 
   async function handlePay() {
-    if (!publicClient || !terms || !account) return;
+    if (!publicClient || !terms || !account || !circleAddress) return;
     setError("");
     try {
       const allowance = (await publicClient.readContract({
@@ -79,6 +79,16 @@ export default function ContributePage() {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setPhase("error");
     }
+  }
+
+  if (!circleAddress) {
+    return (
+      <div className="max-w-[520px] pt-11">
+        <p className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
+          No circle address in this link.
+        </p>
+      </div>
+    );
   }
 
   if (!terms) {
@@ -138,7 +148,7 @@ export default function ContributePage() {
             </button>
             <button
               type="button"
-              onClick={() => router.push(`/c/${circleAddress}`)}
+              onClick={() => router.push(circleUrl(circleAddress))}
               disabled={phase !== "confirm"}
               className="cursor-pointer font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -164,7 +174,7 @@ export default function ContributePage() {
               Try again
             </button>
             <Link
-              href={`/c/${circleAddress}`}
+              href={circleUrl(circleAddress)}
               className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary"
             >
               Back to the circle
@@ -184,7 +194,7 @@ export default function ContributePage() {
             {formatUnits(expected, 18)} {tokenSymbol} collected.
           </p>
           <Link
-            href={`/c/${circleAddress}`}
+            href={circleUrl(circleAddress)}
             className="inline-block cursor-pointer border border-[oklch(0.75_0.012_85)] px-[18px] py-3 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors hover:border-primary hover:text-primary"
           >
             Back to the circle
@@ -192,5 +202,13 @@ export default function ContributePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ContributePage() {
+  return (
+    <Suspense fallback={<div className="pt-[44px] text-muted-foreground">Loading…</div>}>
+      <ContributeInner />
+    </Suspense>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { formatUnits, parseUnits, type Address } from "viem";
 import { CircleAbi, getTokens } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { erc20Abi } from "@/lib/erc20";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useCircleDebts } from "@/hooks/use-circle-debts";
@@ -17,17 +18,16 @@ function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-export default function RepayPage() {
-  const params = useParams<{ address: string }>();
-  const circleAddress = params.address as Address;
+function RepayInner() {
+  const circleAddress = useSearchParams().get("address") as Address | null;
   const router = useRouter();
   const { address: account } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
   const tokens = getTokens(useChainId());
 
-  const { terms } = useCircleTerms(circleAddress);
-  const { debts } = useCircleDebts(circleAddress);
+  const { terms } = useCircleTerms(circleAddress ?? "0x0");
+  const { debts } = useCircleDebts(circleAddress ?? "0x0");
   const tokenSymbol = tokens.find((t) => t.address.toLowerCase() === terms?.token.toLowerCase())?.symbol ?? "?";
 
   const myDebts = debts.filter((d) => account && d.debtor.toLowerCase() === account.toLowerCase());
@@ -53,7 +53,7 @@ export default function RepayPage() {
   }
 
   async function handleRepay() {
-    if (!publicClient || !terms || !selected) return;
+    if (!publicClient || !terms || !selected || !circleAddress) return;
     setError("");
     try {
       const amount = parseUnits(amountStr || "0", 18);
@@ -98,6 +98,16 @@ export default function RepayPage() {
     }
   }
 
+  if (!circleAddress) {
+    return (
+      <div className="max-w-[560px] pt-11">
+        <p className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
+          No circle address in this link.
+        </p>
+      </div>
+    );
+  }
+
   if (!terms) {
     return <div className="pt-11 text-muted-foreground">Loading…</div>;
   }
@@ -110,7 +120,7 @@ export default function RepayPage() {
           This wallet doesn&rsquo;t owe anyone on this circle right now.
         </p>
         <Link
-          href={`/c/${circleAddress}`}
+          href={circleUrl(circleAddress)}
           className="inline-block border border-[oklch(0.75_0.012_85)] px-[18px] py-3 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors hover:border-primary hover:text-primary"
         >
           Back to the circle
@@ -211,7 +221,7 @@ export default function RepayPage() {
             </button>
             <button
               type="button"
-              onClick={() => router.push(`/c/${circleAddress}`)}
+              onClick={() => router.push(circleUrl(circleAddress))}
               disabled={phase !== "confirm"}
               className="cursor-pointer font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary disabled:opacity-60"
             >
@@ -237,7 +247,7 @@ export default function RepayPage() {
               Try again
             </button>
             <Link
-              href={`/c/${circleAddress}`}
+              href={circleUrl(circleAddress)}
               className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary"
             >
               Back to the circle
@@ -253,7 +263,7 @@ export default function RepayPage() {
             {formatUnits(paidAmount, 18)} {tokenSymbol} paid back to {paidTo ? truncate(paidTo) : "…"}.
           </h2>
           <Link
-            href={`/c/${circleAddress}`}
+            href={circleUrl(circleAddress)}
             className="inline-block border border-[oklch(0.75_0.012_85)] px-[18px] py-3 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors hover:border-primary hover:text-primary"
           >
             Back to the circle
@@ -261,5 +271,13 @@ export default function RepayPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RepayPage() {
+  return (
+    <Suspense fallback={<div className="pt-11 text-muted-foreground">Loading…</div>}>
+      <RepayInner />
+    </Suspense>
   );
 }

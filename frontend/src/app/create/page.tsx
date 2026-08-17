@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { decodeEventLog, parseUnits, type Address } from "viem";
 import { getCircleFactoryAddress, getTokens, CircleFactoryAbi } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { generateSecret, inviteHashFor } from "@/lib/secret";
 import { waitForSuccess } from "@/lib/tx";
 
@@ -98,7 +99,7 @@ export default function CreatePage() {
       });
       await waitForSuccess(publicClient, joinHash);
 
-      router.push(`/c/${circleAddress}/invite#s=${secret}`);
+      router.push(`${circleUrl(circleAddress, "invite")}#s=${secret}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setPhase("error");

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { formatUnits, type Address } from "viem";
 import { CircleAbi, getTokens } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { useCircleTerms, STATE_NAMES } from "@/hooks/use-circle-terms";
 import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useCircleDebts } from "@/hooks/use-circle-debts";
@@ -33,28 +34,27 @@ function BackLink() {
   );
 }
 
-export default function DashboardPage() {
-  const params = useParams<{ address: string }>();
-  const circleAddress = params.address as Address;
+function DashboardInner() {
+  const circleAddress = useSearchParams().get("address") as Address | null;
   const { address: account, isConnected } = useAccount();
   const publicClient = usePublicClient();
   const tokens = getTokens(useChainId());
   const { writeContractAsync } = useWriteContract();
 
-  const { terms, isLoading: termsLoading, refetch: refetchTerms } = useCircleTerms(circleAddress);
-  const { members, loading: membersLoading } = useCircleMembers(circleAddress);
-  const { debts } = useCircleDebts(circleAddress);
-  const { claimable, refetch: refetchClaimable } = useClaimable(circleAddress, account);
+  const { terms, isLoading: termsLoading, refetch: refetchTerms } = useCircleTerms(circleAddress ?? "0x0");
+  const { members, loading: membersLoading } = useCircleMembers(circleAddress ?? "0x0");
+  const { debts } = useCircleDebts(circleAddress ?? "0x0");
+  const { claimable, refetch: refetchClaimable } = useClaimable(circleAddress ?? "0x0", account);
 
   const memberAddresses = members.map((m) => m.address);
-  const { paid } = useRoundPayments(circleAddress, terms?.currentRound ?? 0, memberAddresses);
+  const { paid } = useRoundPayments(circleAddress ?? "0x0", terms?.currentRound ?? 0, memberAddresses);
 
   const { data: roundData } = useReadContract({
-    address: circleAddress,
+    address: circleAddress ?? "0x0",
     abi: CircleAbi,
     functionName: "rounds",
     args: [terms?.currentRound ?? 0],
-    query: { enabled: !!terms, refetchInterval: 4000 },
+    query: { enabled: !!terms && !!circleAddress, refetchInterval: 4000 },
   });
   const collected = (roundData as readonly [bigint, boolean] | undefined)?.[0] ?? 0n;
 
@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const now = useChainTime();
 
   async function handleCloseRound() {
-    if (!publicClient) return;
+    if (!publicClient || !circleAddress) return;
     setCloseError("");
     setClosing(true);
     try {
@@ -79,6 +79,17 @@ export default function DashboardPage() {
     } finally {
       setClosing(false);
     }
+  }
+
+  if (!circleAddress) {
+    return (
+      <div className="max-w-[460px] pt-[34px]">
+        <BackLink />
+        <p className="mt-6 border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
+          No circle address in this link.
+        </p>
+      </div>
+    );
   }
 
   if (!isConnected) {
@@ -118,7 +129,7 @@ export default function DashboardPage() {
         <p className="mt-4 text-base text-muted-foreground">
           This circle hasn&rsquo;t started yet — it&rsquo;s still filling
           its seats.{" "}
-          <Link href={`/c/${circleAddress}/invite`} className="text-primary">
+          <Link href={circleUrl(circleAddress, "invite")} className="text-primary">
             See invite progress
           </Link>
           .
@@ -313,7 +324,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap gap-2.5">
           {showPay && (
             <Link
-              href={`/c/${circleAddress}/contribute`}
+              href={circleUrl(circleAddress, "contribute")}
               className="border border-primary bg-primary px-[18px] py-3 font-mono text-[11px] tracking-[0.08em] text-primary-foreground uppercase transition-colors hover:bg-[oklch(0.36_0.11_320)]"
             >
               Pay {money(terms.contribution)}
@@ -321,7 +332,7 @@ export default function DashboardPage() {
           )}
           {showClaim && (
             <Link
-              href={`/c/${circleAddress}/claim`}
+              href={circleUrl(circleAddress, "claim")}
               className="border border-primary bg-primary px-[18px] py-3 font-mono text-[11px] tracking-[0.08em] text-primary-foreground uppercase transition-colors hover:bg-[oklch(0.36_0.11_320)]"
             >
               Claim {money(claimable)}
@@ -389,7 +400,7 @@ export default function DashboardPage() {
                 </div>
               ))}
               <Link
-                href={`/c/${circleAddress}/repay`}
+                href={circleUrl(circleAddress, "repay")}
                 className="mt-3.5 inline-block cursor-pointer border border-[oklch(0.75_0.012_85)] px-3.5 py-2.5 font-mono text-[10px] tracking-[0.08em] uppercase transition-colors hover:border-primary hover:text-primary"
               >
                 Pay back a debt
@@ -429,5 +440,13 @@ export default function DashboardPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="pt-[34px] text-muted-foreground">Loading…</div>}>
+      <DashboardInner />
+    </Suspense>
   );
 }

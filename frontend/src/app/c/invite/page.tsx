@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useReadContracts } from "wagmi";
 import { formatUnits, type Address } from "viem";
 import { CircleAbi } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useWindowLocationHash, useWindowOrigin } from "@/hooks/use-window-location";
 
@@ -18,9 +19,8 @@ function roundWord(seconds: number) {
   return ROUND_WORDS[seconds] ?? `every ${Math.round(seconds / 86400)} days`;
 }
 
-export default function InvitePage() {
-  const params = useParams<{ address: string }>();
-  const circleAddress = params.address as Address;
+function InviteInner() {
+  const circleAddress = useSearchParams().get("address") as Address | null;
 
   const [copied, setCopied] = useState(false);
   const hash = useWindowLocationHash();
@@ -30,11 +30,12 @@ export default function InvitePage() {
 
   const { data } = useReadContracts({
     contracts: [
-      { address: circleAddress, abi: CircleAbi, functionName: "contribution" },
-      { address: circleAddress, abi: CircleAbi, functionName: "memberCount" },
-      { address: circleAddress, abi: CircleAbi, functionName: "roundDuration" },
-      { address: circleAddress, abi: CircleAbi, functionName: "fillDeadline" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "contribution" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "memberCount" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "roundDuration" },
+      { address: circleAddress ?? "0x0", abi: CircleAbi, functionName: "fillDeadline" },
     ],
+    query: { enabled: !!circleAddress },
   });
 
   const contribution = data?.[0]?.result as bigint | undefined;
@@ -42,12 +43,12 @@ export default function InvitePage() {
   const roundDuration = data?.[2]?.result as number | undefined;
   const fillDeadline = data?.[3]?.result as bigint | undefined;
 
-  const { members } = useCircleMembers(circleAddress);
+  const { members } = useCircleMembers(circleAddress ?? "0x0");
   const joined = members.length;
   const target = memberCount ?? 0;
   const full = target > 0 && joined >= target;
 
-  const inviteLink = secret ? `${origin}/c/${circleAddress}/join#s=${secret}` : "";
+  const inviteLink = secret && circleAddress ? `${origin}${circleUrl(circleAddress, "join")}#s=${secret}` : "";
 
   function copyLink() {
     navigator.clipboard.writeText(inviteLink);
@@ -63,6 +64,16 @@ export default function InvitePage() {
       ? formatUnits(contribution * BigInt(memberCount - 1), 18)
       : "…";
   const deadlineLabel = fillDeadline ? new Date(Number(fillDeadline) * 1000).toLocaleDateString() : "…";
+
+  if (!circleAddress) {
+    return (
+      <div className="pt-[34px]">
+        <p className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
+          No circle address in this link.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-[34px]">
@@ -134,5 +145,13 @@ export default function InvitePage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={<div className="pt-[34px] text-muted-foreground">Loading…</div>}>
+      <InviteInner />
+    </Suspense>
   );
 }

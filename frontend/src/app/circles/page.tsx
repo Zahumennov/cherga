@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAccount, useChainId } from "wagmi";
 import { formatUnits } from "viem";
 import { getTokens } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { useMyCircles, type MyCircle } from "@/hooks/use-my-circles";
 import { useChainTime } from "@/hooks/use-chain-time";
 
@@ -177,7 +178,7 @@ export default function MyCirclesPage() {
               <button
                 key={c.address}
                 type="button"
-                onClick={() => router.push(`/c/${c.address}`)}
+                onClick={() => router.push(circleUrl(c.address))}
                 className={
                   "block w-full cursor-pointer border-b border-[oklch(0.91_0.012_85)] border-l-2 px-0 py-4 text-left transition-opacity " +
                   (action.urgent ? "border-l-primary" : "border-l-transparent") +

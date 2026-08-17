@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { formatUnits, type Address } from "viem";
 import { CircleAbi, getTokens } from "@/lib/contracts";
+import { circleUrl } from "@/lib/circle-url";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useClaimable } from "@/hooks/use-claimable";
 import { waitForSuccess } from "@/lib/tx";
@@ -16,17 +17,16 @@ function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-export default function ClaimPage() {
-  const params = useParams<{ address: string }>();
-  const circleAddress = params.address as Address;
+function ClaimInner() {
+  const circleAddress = useSearchParams().get("address") as Address | null;
   const router = useRouter();
   const { address: account } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
   const tokens = getTokens(useChainId());
 
-  const { terms } = useCircleTerms(circleAddress);
-  const { claimable, refetch } = useClaimable(circleAddress, account);
+  const { terms } = useCircleTerms(circleAddress ?? "0x0");
+  const { claimable, refetch } = useClaimable(circleAddress ?? "0x0", account);
   const tokenSymbol = tokens.find((t) => t.address.toLowerCase() === terms?.token.toLowerCase())?.symbol ?? "?";
 
   const [phase, setPhase] = useState<Phase>("confirm");
@@ -34,7 +34,7 @@ export default function ClaimPage() {
   const [claimedAmount, setClaimedAmount] = useState(0n);
 
   async function handleClaim() {
-    if (!publicClient) return;
+    if (!publicClient || !circleAddress) return;
     setError("");
     setPhase("claiming");
     try {
@@ -54,6 +54,16 @@ export default function ClaimPage() {
     }
   }
 
+  if (!circleAddress) {
+    return (
+      <div className="max-w-[540px] pt-11">
+        <p className="border border-destructive/40 bg-destructive/5 px-4 py-3 text-[15px] text-destructive">
+          No circle address in this link.
+        </p>
+      </div>
+    );
+  }
+
   if (!terms) {
     return <div className="pt-11 text-muted-foreground">Loading…</div>;
   }
@@ -68,7 +78,7 @@ export default function ClaimPage() {
           This wallet has no claimable balance on this circle right now.
         </p>
         <Link
-          href={`/c/${circleAddress}`}
+          href={circleUrl(circleAddress)}
           className="inline-block border border-[oklch(0.75_0.012_85)] px-[18px] py-3 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors hover:border-primary hover:text-primary"
         >
           Back to the circle
@@ -116,7 +126,7 @@ export default function ClaimPage() {
             </button>
             <button
               type="button"
-              onClick={() => router.push(`/c/${circleAddress}`)}
+              onClick={() => router.push(circleUrl(circleAddress))}
               disabled={phase !== "confirm"}
               className="cursor-pointer font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary disabled:opacity-60"
             >
@@ -142,7 +152,7 @@ export default function ClaimPage() {
               Try again
             </button>
             <Link
-              href={`/c/${circleAddress}`}
+              href={circleUrl(circleAddress)}
               className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-primary"
             >
               Back to the circle
@@ -156,7 +166,7 @@ export default function ClaimPage() {
           <div className="font-mono text-[10px] tracking-[0.12em] text-primary uppercase">Claimed</div>
           <h2 className="mt-3 mb-3 text-[30px] font-normal">{money(claimedAmount)} is in your wallet.</h2>
           <Link
-            href={`/c/${circleAddress}`}
+            href={circleUrl(circleAddress)}
             className="inline-block border border-[oklch(0.75_0.012_85)] px-[18px] py-3 font-mono text-[11px] tracking-[0.08em] uppercase transition-colors hover:border-primary hover:text-primary"
           >
             Back to the circle
@@ -164,5 +174,13 @@ export default function ClaimPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ClaimPage() {
+  return (
+    <Suspense fallback={<div className="pt-11 text-muted-foreground">Loading…</div>}>
+      <ClaimInner />
+    </Suspense>
   );
 }
