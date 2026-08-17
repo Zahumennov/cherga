@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const JOIN_PATH = /^\/c\/0x[a-fA-F0-9]{40}\/join$/;
+const ADDRESS = /^0x[a-fA-F0-9]{40}$/;
 
 export function InviteLinkButton() {
   const router = useRouter();
@@ -13,20 +13,23 @@ export function InviteLinkButton() {
 
   function handleGo() {
     let pathname: string;
+    let search: string;
     let hash: string;
     try {
       const url = new URL(value, window.location.origin);
       pathname = url.pathname;
+      search = url.search;
       hash = url.hash;
     } catch {
       setError("That doesn't look like a link.");
       return;
     }
-    if (!JOIN_PATH.test(pathname)) {
+    const address = new URLSearchParams(search).get("address");
+    if (pathname !== "/c/join" || !address || !ADDRESS.test(address)) {
       setError("That doesn't look like a Cherga invite link.");
       return;
     }
-    router.push(pathname + hash);
+    router.push(pathname + search + hash);
   }
 
   if (!open) {
@@ -34,7 +37,7 @@ export function InviteLinkButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="cursor-pointer border border-[oklch(0.75_0.012_85)] bg-transparent px-5 py-[13px] font-mono text-[11px] tracking-[0.08em] text-[oklch(0.3_0.012_85)] uppercase transition-colors hover:border-primary hover:text-primary"
+        className="self-start cursor-pointer border border-[oklch(0.75_0.012_85)] bg-transparent px-5 py-[13px] font-mono text-[11px] tracking-[0.08em] text-[oklch(0.3_0.012_85)] uppercase transition-colors hover:border-primary hover:text-primary"
       >
         I have an invite link
       </button>

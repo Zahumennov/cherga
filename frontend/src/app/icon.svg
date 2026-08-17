@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="oklch(0.45 0.10 320)"/>
+  <text x="16" y="23" font-family="ui-monospace, 'Martian Mono', Menlo, Consolas, monospace" font-size="19" font-weight="600" letter-spacing="-1" fill="oklch(0.98 0.008 320)" text-anchor="middle">C</text>
+</svg>

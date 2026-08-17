@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectKitButton } from "connectkit";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import { useMyCircles, type MyCircle } from "@/hooks/use-my-circles";
+import { whitechainSepolia } from "@/lib/wagmi";
 
 function needsYouCount(circles: MyCircle[] | undefined) {
   if (!circles) return 0;
@@ -20,20 +21,21 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { address: account, isConnected } = useAccount();
   const { data: circles } = useMyCircles(account);
+  const { switchChain } = useSwitchChain();
   const badge = needsYouCount(circles);
   const onCircles = pathname === "/circles";
 
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border pt-[22px] pb-[14px]">
+    <div className="flex items-baseline justify-between gap-4 border-b border-border pt-[22px] pb-[14px] max-sm:flex-wrap max-sm:gap-y-3">
       <Link href="/" className="flex items-baseline gap-2.5">
         <span className="font-mono text-[13px] font-medium tracking-[0.14em]">
           CHERGA
         </span>
-        <span className="font-mono text-[9.5px] tracking-[0.1em] text-muted-foreground">
+        <span className="font-mono text-[9.5px] tracking-[0.1em] text-muted-foreground max-sm:hidden">
           ЧЕРГА · A QUEUE
         </span>
       </Link>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 max-sm:w-full max-sm:justify-start">
         {isConnected && (
           <Link
             href="/circles"
@@ -50,6 +52,17 @@ export function SiteHeader() {
             )}
           </Link>
         )}
+        <select
+          value="whitechain-testnet"
+          onChange={() => switchChain({ chainId: whitechainSepolia.id })}
+          title="Network"
+          className="max-w-[190px] cursor-pointer border border-border bg-transparent px-1.5 py-[5px] font-mono text-[9.5px] tracking-[0.04em] text-[oklch(0.4_0.012_85)] uppercase max-sm:max-w-none max-sm:flex-1"
+        >
+          <option value="whitechain-testnet">Whitechain testnet</option>
+          <option value="whitechain" disabled>
+            Whitechain mainnet — soon
+          </option>
+        </select>
         <ConnectKitButton.Custom>
           {({ show, truncatedAddress }) => (
             <div className="flex items-center gap-3">
