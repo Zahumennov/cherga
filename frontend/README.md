@@ -3,11 +3,11 @@
 Next.js (App Router) + TypeScript + Tailwind + shadcn/ui, connecting to
 `Circle`/`CircleFactory` via wagmi/viem + ConnectKit.
 
-## Local development (no live testnet yet)
+## Local development
 
-Until the real testnet is up (stage 5), this runs against a local Anvil
-chain. Three terminals, from the **repo root** (not `frontend/`) for the
-first two:
+Against a local Anvil chain (fast, free, no faucet) rather than Whitechain
+testnet directly — see `DEPLOYMENTS.md` for the real deployment. Three
+terminals, from the **repo root** (not `frontend/`) for the first two:
 
 **1. Start a local chain:**
 
@@ -48,3 +48,23 @@ to have funds and, after minting, mock tokens to test with.
 
 `frontend/src/generated/` (ABIs + deployment addresses) is gitignored —
 it's regenerated locally, not committed.
+
+## Deploying
+
+A fully static export (`output: "export"` in `next.config.ts`) — no
+server, no Node/edge runtime to host, deployable as plain HTML/CSS/JS.
+Circle addresses live in query params (`/c?address=0x...`), not the
+path, since a static export can't pre-render a page per arbitrary
+on-chain address — see `src/lib/circle-url.ts`.
+
+Deployed via Cloudflare Pages, connected to this GitHub repo:
+
+| Setting | Value |
+|---|---|
+| Production branch | `main` |
+| Root directory | `frontend` |
+| Build command | `pnpm build` |
+| Build output directory | `out` |
+
+Node and pnpm versions come from `.node-version` and `package.json`'s
+`packageManager` field — Cloudflare's build image reads both.
