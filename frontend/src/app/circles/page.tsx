@@ -180,7 +180,7 @@ export default function MyCirclesPage() {
                 type="button"
                 onClick={() => router.push(circleUrl(c.address))}
                 className={
-                  "block w-full cursor-pointer border-b border-[oklch(0.91_0.012_85)] border-l-2 px-0 py-4 text-left transition-opacity " +
+                  "block w-full cursor-pointer border-b border-[oklch(0.91_0.012_85)] border-l-2 px-4 py-4 text-left transition-opacity " +
                   (action.urgent ? "border-l-primary" : "border-l-transparent") +
                   (finished ? " opacity-70" : "")
                 }
