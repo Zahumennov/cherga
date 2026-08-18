@@ -24,7 +24,7 @@ export function SiteHeader() {
   const onCircles = pathname === "/circles";
 
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border pt-[22px] pb-[14px] max-sm:flex-wrap max-sm:gap-y-3">
+    <div className="flex items-baseline justify-between gap-4 border-b border-border pt-[22px] pb-[14px]">
       <Link href="/" className="flex items-baseline gap-2.5">
         <span className="font-mono text-[13px] font-medium tracking-[0.14em]">
           CHERGA
@@ -33,7 +33,7 @@ export function SiteHeader() {
           ЧЕРГА · A QUEUE
         </span>
       </Link>
-      <div className="flex items-center gap-3 max-sm:w-full max-sm:justify-start">
+      <div className="flex items-center gap-3">
         {isConnected && (
           <Link
             href="/circles"
