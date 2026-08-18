@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ConnectKitButton } from "connectkit";
+import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
+import { parseUnits } from "viem";
 import { InviteLinkButton } from "@/components/invite-link-button";
+import { getTokens } from "@/lib/contracts";
+import { mockErc20MintAbi } from "@/lib/erc20";
+import { waitForSuccess } from "@/lib/tx";
+import { errorMessage } from "@/lib/errors";
+
+const MINT_AMOUNT = "1000";
 
 const steps = [
   {
@@ -52,8 +61,38 @@ const reasons = [
   },
 ];
 
+type MintPhase = "idle" | "minting" | "done" | "error";
+
 export default function Home() {
   const [openStep, setOpenStep] = useState<number | null>(0);
+
+  const { address: account, isConnected } = useAccount();
+  const chainId = useChainId();
+  const publicClient = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
+  const token = getTokens(chainId)[0];
+
+  const [mintPhase, setMintPhase] = useState<MintPhase>("idle");
+  const [mintError, setMintError] = useState("");
+
+  async function handleMint() {
+    if (!publicClient || !account) return;
+    setMintError("");
+    setMintPhase("minting");
+    try {
+      const hash = await writeContractAsync({
+        address: token.address,
+        abi: mockErc20MintAbi,
+        functionName: "mint",
+        args: [account, parseUnits(MINT_AMOUNT, 18)],
+      });
+      await waitForSuccess(publicClient, hash);
+      setMintPhase("done");
+    } catch (err) {
+      setMintError(errorMessage(err, "Something went wrong."));
+      setMintPhase("error");
+    }
+  }
 
   return (
     <div>
@@ -107,6 +146,67 @@ export default function Home() {
             &rsquo;s personal project, and comes with no support and no
             guarantees.
           </p>
+        </div>
+      </div>
+
+      <div className="mt-10 grid max-w-[620px] grid-cols-1 gap-x-10 gap-y-6 border-t border-border pt-5 sm:grid-cols-2">
+        <div>
+          <div className="mb-1.5 font-mono text-[9.5px] tracking-[0.14em] text-muted-foreground uppercase">
+            Need test tokens?
+          </div>
+          <div className="mb-1 text-[15px] font-medium">WBT, for gas</div>
+          <p className="mb-2.5 text-[14px] text-[oklch(0.4_0.012_85)]">
+            Every transaction costs a little WBT, Whitechain&rsquo;s native
+            gas token. Without it your wallet can&rsquo;t send anything.
+          </p>
+          <a
+            href="https://faucet.testnet.whitechain.io/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block border border-[oklch(0.75_0.012_85)] px-4 py-2 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors hover:border-primary hover:text-primary"
+          >
+            Open the WBT faucet ↗
+          </a>
+        </div>
+        <div>
+          <div className="mb-1.5 font-mono text-[9.5px] tracking-[0.14em] text-muted-foreground uppercase invisible sm:visible">
+            &nbsp;
+          </div>
+          <div className="mb-1 text-[15px] font-medium">mUSD, to pay with</div>
+          <p className="mb-2.5 text-[14px] text-[oklch(0.4_0.012_85)]">
+            mUSD is Cherga&rsquo;s test stablecoin — not a real asset, just a
+            contract anyone can mint from. This sends {MINT_AMOUNT} mUSD to
+            your connected wallet.
+          </p>
+          {!isConnected ? (
+            <ConnectKitButton.Custom>
+              {({ show }) => (
+                <button
+                  type="button"
+                  onClick={show}
+                  className="cursor-pointer border border-[oklch(0.75_0.012_85)] px-4 py-2 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors hover:border-primary hover:text-primary"
+                >
+                  Connect a wallet first
+                </button>
+              )}
+            </ConnectKitButton.Custom>
+          ) : mintPhase === "done" ? (
+            <div className="font-mono text-[10px] tracking-[0.06em] text-[oklch(0.42_0.09_150)] uppercase">
+              {MINT_AMOUNT} mUSD sent to your wallet
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={mintPhase === "minting"}
+              onClick={handleMint}
+              className="cursor-pointer border border-[oklch(0.75_0.012_85)] px-4 py-2 font-mono text-[10px] tracking-[0.06em] uppercase transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {mintPhase === "minting" ? "Minting…" : `Mint ${MINT_AMOUNT} mUSD`}
+            </button>
+          )}
+          {mintPhase === "error" && (
+            <p className="mt-2 text-[13px] text-destructive">{mintError}</p>
+          )}
         </div>
       </div>
 
