@@ -91,22 +91,21 @@ export default function Home() {
           <div className="mb-[9px] font-mono text-[9.5px] tracking-[0.14em] text-[oklch(0.44_0.09_78)] uppercase">
             Read this first
           </div>
-          <p className="mb-2.5 text-[18px] leading-[1.5]">
-            This isn&rsquo;t insured and it isn&rsquo;t reversible. Nothing
-            here protects you if a friend stops paying — there is no
-            collateral and no one to appeal to. Only share a circle with
-            people you&rsquo;d trust with cash in person.
-          </p>
-          <p className="mb-2.5 text-[15px] leading-[1.5] text-[oklch(0.38_0.02_85)]">
-            The contract has not been audited. Cherga is one person&rsquo;s
-            personal project, not a company&rsquo;s product, and comes with
-            no support and no guarantees.
-          </p>
-          <p className="text-[15px] leading-[1.5] text-[oklch(0.38_0.02_85)]">
+          <p className="text-[17px] leading-[1.6]">
             Cherga currently runs on the{" "}
             <strong className="font-medium">Whitechain testnet</strong> only.
             The stablecoins in a circle are test tokens with no value —
-            nothing here moves real money yet.
+            nothing here moves real money. Cherga is{" "}
+            <a
+              href="https://x.com/zahumennov"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-[oklch(0.7_0.02_85)] underline-offset-2 transition-colors hover:text-primary hover:decoration-primary"
+            >
+              @zahumennov
+            </a>
+            &rsquo;s personal project, and comes with no support and no
+            guarantees.
           </p>
         </div>
       </div>
@@ -230,10 +229,7 @@ export default function Home() {
           CHERGA
         </span>
         <span className="max-w-[460px] font-mono text-[9.5px] leading-[1.6] tracking-[0.04em] text-muted-foreground">
-          Whitechain testnet only — test tokens, not real money. Unaudited
-          code, a personal project, no guarantees. No collateral protects you
-          if someone stops paying — only share a circle with people you
-          trust in person.
+          Whitechain testnet only — test tokens, not real money.
         </span>
       </div>
     </div>
