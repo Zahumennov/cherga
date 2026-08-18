@@ -11,6 +11,7 @@ import { erc20Abi } from "@/lib/erc20";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useCircleMembers } from "@/hooks/use-circle-members";
 import { waitForSuccess } from "@/lib/tx";
+import { errorMessage } from "@/lib/errors";
 
 function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -76,7 +77,7 @@ function ContributeInner() {
       await refetchRound();
       setPhase("done");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(errorMessage(err, "Something went wrong."));
       setPhase("error");
     }
   }

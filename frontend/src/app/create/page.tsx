@@ -9,6 +9,7 @@ import { getCircleFactoryAddress, getTokens, CircleFactoryAbi } from "@/lib/cont
 import { circleUrl } from "@/lib/circle-url";
 import { generateSecret, inviteHashFor } from "@/lib/secret";
 import { waitForSuccess } from "@/lib/tx";
+import { errorMessage } from "@/lib/errors";
 
 const ROUND_LENGTHS = [
   { id: "weekly", label: "Weekly", word: "weekly", seconds: 7 * 86400 },
@@ -101,7 +102,7 @@ export default function CreatePage() {
 
       router.push(`${circleUrl(circleAddress, "invite")}#s=${secret}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(errorMessage(err, "Something went wrong."));
       setPhase("error");
     }
   }

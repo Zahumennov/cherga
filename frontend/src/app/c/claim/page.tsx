@@ -10,6 +10,7 @@ import { circleUrl } from "@/lib/circle-url";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useClaimable } from "@/hooks/use-claimable";
 import { waitForSuccess } from "@/lib/tx";
+import { errorMessage } from "@/lib/errors";
 
 type Phase = "confirm" | "claiming" | "done" | "error";
 
@@ -49,7 +50,7 @@ function ClaimInner() {
       await refetch();
       setPhase("done");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(errorMessage(err, "Something went wrong."));
       setPhase("error");
     }
   }

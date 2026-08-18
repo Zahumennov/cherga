@@ -11,6 +11,7 @@ import { erc20Abi } from "@/lib/erc20";
 import { useCircleTerms } from "@/hooks/use-circle-terms";
 import { useCircleDebts } from "@/hooks/use-circle-debts";
 import { waitForSuccess } from "@/lib/tx";
+import { errorMessage } from "@/lib/errors";
 
 type Phase = "confirm" | "approving" | "paying" | "done" | "error";
 
@@ -93,7 +94,7 @@ function RepayInner() {
       setPaidTo(selected.creditor);
       setPhase("done");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(errorMessage(err, "Something went wrong."));
       setPhase("error");
     }
   }

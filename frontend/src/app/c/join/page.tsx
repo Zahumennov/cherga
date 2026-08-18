@@ -11,6 +11,7 @@ import { useCircleMembers } from "@/hooks/use-circle-members";
 import { useCircleCreator } from "@/hooks/use-circle-creator";
 import { useWindowLocationHash } from "@/hooks/use-window-location";
 import { waitForSuccess } from "@/lib/tx";
+import { errorMessage } from "@/lib/errors";
 
 const STATE_NAMES = ["Forming", "Active", "Cancelled", "Completed"] as const;
 
@@ -95,7 +96,7 @@ function JoinInner() {
       await waitForSuccess(publicClient, joinHash);
       router.push(`${circleUrl(circleAddress, "invite")}#s=${secret}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(errorMessage(err, "Something went wrong."));
       setPhase("error");
     }
   }
