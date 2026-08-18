@@ -225,8 +225,7 @@ audited — do not point real money at it.
 - [x] Factory + invite-only join
 - [x] Invariant & fuzz testing (see [`FINDINGS.md`](FINDINGS.md))
 - [x] Testnet deployment (see [`DEPLOYMENTS.md`](DEPLOYMENTS.md))
-- [ ] Frontend — in progress, built and tested against a local chain so far
-- [ ] Mainnet pilot
+- [x] Frontend — live at [cherga.zahumennov.dev](https://cherga.zahumennov.dev), tested against Whitechain testnet
 
 See the commit history for day-to-day progress.
 
