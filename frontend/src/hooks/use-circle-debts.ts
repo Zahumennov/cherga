@@ -3,8 +3,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReadContracts, usePublicClient, useChainId, useWatchContractEvent } from "wagmi";
 import type { Address } from "viem";
-import { CircleAbi, getFromBlock } from "@/lib/contracts";
+import { CircleAbi } from "@/lib/contracts";
 import { getContractEventsChunked } from "@/lib/logs";
+import { useCircleCreationInfo } from "@/hooks/use-circle-creator";
 
 export interface Debt {
   debtor: Address;
@@ -23,16 +24,20 @@ export function useCircleDebts(circleAddress: Address) {
   const chainId = useChainId();
   const queryClient = useQueryClient();
   const candidatesKey = ["circle-debt-candidates", chainId, circleAddress] as const;
+  const { data: creationInfo } = useCircleCreationInfo(circleAddress);
 
   const { data: candidates } = useQuery({
     queryKey: candidatesKey,
-    enabled: !!publicClient,
+    enabled: !!publicClient && !!creationInfo,
+    // Same reasoning as use-circle-members.ts: expensive full scan, past
+    // defaults never change, useWatchContractEvent below covers new ones.
+    staleTime: 60_000,
     queryFn: async () => {
       const logs = await getContractEventsChunked(publicClient!, {
         address: circleAddress,
         abi: CircleAbi,
         eventName: "Defaulted",
-        fromBlock: getFromBlock(chainId),
+        fromBlock: creationInfo!.blockNumber,
       });
       return logs.map((log) => ({
         debtor: log.args.debtor as Address,

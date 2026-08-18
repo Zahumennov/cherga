@@ -40,7 +40,14 @@ export function useMyCircles(account: Address | undefined) {
   return useQuery({
     queryKey: ["my-circles", chainId, account],
     enabled: !!publicClient && !!account,
-    refetchInterval: 8000,
+    // This runs in SiteHeader, so it's live on every page, and each run
+    // can fire several chunked event scans per joined circle — expensive
+    // enough that 8s was hammering the public RPC into rate-limiting
+    // (see lib/logs.ts). No live-update watcher exists for "did I join a
+    // new circle" the way other hooks watch a single known circle, so
+    // this still has to poll — just much less often.
+    refetchInterval: 45_000,
+    staleTime: 20_000,
     queryFn: async (): Promise<MyCircle[]> => {
       const joinLogs = await getContractEventsChunked(publicClient!, {
         abi: CircleAbi,
