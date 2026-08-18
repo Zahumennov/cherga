@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   // browser via wagmi/viem), so a static export is all it needs: plain
   // HTML/CSS/JS deployable anywhere, no Node/edge runtime to host.
   output: "export",
+  // `next dev` refuses cross-origin requests to its JS chunks by default —
+  // without this, opening the dev server from a phone on the same Wi-Fi
+  // (via the LAN IP) loads the static HTML shell but every client
+  // component (ConnectKit's button included) silently fails to hydrate.
+  // Dev-only; irrelevant to the static export that actually ships.
+  allowedDevOrigins: ["192.168.1.131"],
 };
 
 export default nextConfig;
