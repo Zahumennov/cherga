@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   // (via the LAN IP) loads the static HTML shell but every client
   // component (ConnectKit's button included) silently fails to hydrate.
   // Dev-only; irrelevant to the static export that actually ships.
+  // This is the maintainer's own machine's LAN IP — replace with your
+  // own (`ipconfig getifaddr en0` on macOS) to test from a phone locally.
   allowedDevOrigins: ["192.168.1.131"],
 };
 

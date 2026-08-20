@@ -1,7 +1,10 @@
 # Cherga frontend
 
-Next.js (App Router) + TypeScript + Tailwind + shadcn/ui, connecting to
-`Circle`/`CircleFactory` via wagmi/viem + ConnectKit.
+Next.js (App Router) + TypeScript + Tailwind, connecting to
+`Circle`/`CircleFactory` via wagmi/viem + ConnectKit (WalletConnect,
+Coinbase Wallet, and browser extensions like MetaMask).
+
+Live at [cherga.zahumennov.dev](https://cherga.zahumennov.dev/).
 
 ## Local development
 
@@ -59,14 +62,19 @@ Circle addresses live in query params (`/c?address=0x...`), not the
 path, since a static export can't pre-render a page per arbitrary
 on-chain address — see `src/lib/circle-url.ts`.
 
-Deployed via Cloudflare Pages, connected to this GitHub repo:
+Deployed via **Cloudflare Workers Builds** (static assets), connected to
+this GitHub repo — not classic Cloudflare Pages, which Cloudflare's own
+docs now steer Next.js projects away from. `wrangler.jsonc` is what
+actually points Cloudflare at the build output (`assets.directory`);
+there's no separate "build output directory" field to set in the
+dashboard the way Pages had one.
 
 | Setting | Value |
 |---|---|
 | Production branch | `main` |
-| Root directory | `frontend` |
+| Path | `frontend` |
 | Build command | `pnpm build` |
-| Build output directory | `out` |
+| Deploy command | default (`wrangler deploy`, reads `wrangler.jsonc`) |
 
 Node and pnpm versions come from `.node-version` and `package.json`'s
 `packageManager` field — Cloudflare's build image reads both.

@@ -5,6 +5,8 @@
 [![Solidity](https://img.shields.io/badge/solidity-%5E0.8.24-363636)](src/Circle.sol)
 [![Built with Foundry](https://img.shields.io/badge/built%20with-Foundry-orange)](https://getfoundry.sh/)
 
+**Live on Whitechain testnet:** [cherga.zahumennov.dev](https://cherga.zahumennov.dev/)
+
 Cherga (Ukrainian: "queue") is a rotating savings and credit association
 (ROSCA) — implemented as a smart contract.
 
@@ -208,8 +210,8 @@ Enforced via Foundry invariant/fuzz testing:
 ## Tech stack
 
 - **Contracts:** [Foundry](https://getfoundry.sh/), Solidity `^0.8.24`, OpenZeppelin (`SafeERC20`)
-- **Frontend:** Next.js (App Router), TypeScript, wagmi + viem, a wallet
-  connector (ConnectKit / RainbowKit), Tailwind + shadcn/ui
+- **Frontend:** Next.js (App Router), TypeScript, wagmi + viem, ConnectKit
+  (WalletConnect + Coinbase Wallet + browser extensions), Tailwind
 - **Networks:** Whitechain only. Intentionally nothing beyond that.
 
 ---
